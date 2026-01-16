@@ -60,8 +60,8 @@ const LandingPage = () => {
     },
     {
       icon: <Clock className="w-8 h-8" />,
-      title: '4-Day Magic',
-      description: 'After signing up, wait just 4 days for your perfect match to be revealed.',
+      title: 'Valentine\'s Day Reveal',
+      description: 'Match is revealed by 6am on Valentine\'s Day (Feb 14).',
     },
     {
       icon: <Sparkles className="w-8 h-8" />,
