@@ -36,6 +36,9 @@ interface Profile {
   gender: string;
   created_at: string;
   payment_status: boolean;
+  about: string | null;
+  interests: string[] | null;
+  profile_picture_url: string | null;
 }
 
 const HomePage = () => {
@@ -61,7 +64,7 @@ const HomePage = () => {
     // Fetch profile
     const { data: profileData } = await supabase
       .from('profiles')
-      .select('name, gender, created_at, payment_status')
+      .select('name, gender, created_at, payment_status, about, interests, profile_picture_url')
       .eq('user_id', user.id)
       .single();
 
@@ -175,7 +178,7 @@ const HomePage = () => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/auth');
+    navigate('/');
   };
 
   const getCountdownDate = () => {
@@ -285,7 +288,11 @@ const HomePage = () => {
               </div>
             </div>
           ) : (
-            <CountdownTimer targetDate={getCountdownDate()} onComplete={fetchMatches} />
+            <CountdownTimer 
+              targetDate={getCountdownDate()} 
+              onComplete={fetchMatches} 
+              gender={profile?.gender as 'male' | 'female'}
+            />
           )}
         </motion.div>
 
@@ -322,7 +329,9 @@ const HomePage = () => {
           className="text-center mt-6"
         >
           <Link to="/profile" className="text-primary hover:underline text-sm">
-            Complete your profile to attract better matches →
+            {profile?.about && profile?.interests && profile.interests.length > 0 && profile?.profile_picture_url
+              ? 'Edit your profile →'
+              : 'Complete your profile to attract better matches →'}
           </Link>
         </motion.div>
       </main>

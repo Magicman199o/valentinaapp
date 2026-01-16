@@ -65,13 +65,25 @@ const ProfilePage = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Check file size (600KB = 614400 bytes)
-    if (file.size > 614400) {
-      toast.error('Image must be less than 600KB');
+    // Check file size (5MB = 5242880 bytes)
+    if (file.size > 5242880) {
+      toast.error('Image must be less than 5MB');
       return;
     }
 
     setUploading(true);
+    
+    // Delete old image if exists
+    if (profile.profile_picture_url) {
+      try {
+        const oldPath = profile.profile_picture_url.split('/profile-pictures/')[1];
+        if (oldPath) {
+          await supabase.storage.from('profile-pictures').remove([oldPath]);
+        }
+      } catch (err) {
+        console.log('Could not delete old image');
+      }
+    }
     
     const fileExt = file.name.split('.').pop();
     const filePath = `${user.id}/${Date.now()}.${fileExt}`;
@@ -127,7 +139,7 @@ const ProfilePage = () => {
       toast.error('Failed to save profile');
     } else {
       toast.success('Profile saved! 💕');
-      navigate('/');
+      navigate('/home');
     }
   };
 
@@ -185,7 +197,7 @@ const ProfilePage = () => {
             </div>
           </div>
           <p className="text-center text-sm text-muted-foreground mb-6">
-            Max file size: 600KB
+            Max file size: 5MB
           </p>
 
           <div className="space-y-6">
