@@ -1,35 +1,40 @@
 import { motion } from 'framer-motion';
-import { Heart } from 'lucide-react';
+import { Heart, Flower2 } from 'lucide-react';
 
 const FloatingHearts = () => {
-  const hearts = Array.from({ length: 8 }, (_, i) => ({
+  const items = Array.from({ length: 12 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
-    delay: Math.random() * 2,
-    duration: 3 + Math.random() * 2,
-    size: 16 + Math.random() * 16,
+    delay: Math.random() * 3,
+    duration: 4 + Math.random() * 3,
+    size: 14 + Math.random() * 18,
+    isFlower: i % 3 === 0, // Every 3rd item is a flower
   }));
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {hearts.map((heart) => (
+      {items.map((item) => (
         <motion.div
-          key={heart.id}
-          className="absolute text-primary/20"
-          style={{ left: `${heart.x}%`, top: '100%' }}
+          key={item.id}
+          className={item.isFlower ? "absolute text-pink-300/30" : "absolute text-primary/20"}
+          style={{ left: `${item.x}%`, top: '100%' }}
           animate={{
             y: [0, -window.innerHeight - 100],
-            rotate: [-10, 10, -10],
+            rotate: item.isFlower ? [0, 360] : [-10, 10, -10],
             opacity: [0, 1, 1, 0],
           }}
           transition={{
-            duration: heart.duration,
-            delay: heart.delay,
+            duration: item.duration,
+            delay: item.delay,
             repeat: Infinity,
             ease: 'easeOut',
           }}
         >
-          <Heart size={heart.size} fill="currentColor" />
+          {item.isFlower ? (
+            <Flower2 size={item.size} />
+          ) : (
+            <Heart size={item.size} fill="currentColor" />
+          )}
         </motion.div>
       ))}
     </div>

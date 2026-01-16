@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Heart, Gift, Plus, Trash2, Eye, LogOut, Loader2 } from 'lucide-react';
+import { Users, Heart, Gift, Plus, Trash2, Eye, LogOut, Loader2, Upload, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Logo from '@/components/Logo';
 import ViewProfileModal from '@/components/ViewProfileModal';
 import { toast } from 'sonner';
@@ -19,10 +18,14 @@ const AdminPage = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
   const [sponsors, setSponsors] = useState<any[]>([]);
+  const [sponsorInquiries, setSponsorInquiries] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newSponsor, setNewSponsor] = useState({ name: '', icon_url: '', link: '' });
+  const [newSponsor, setNewSponsor] = useState({ name: '', link: '' });
+  const [sponsorIcon, setSponsorIcon] = useState<File | null>(null);
+  const [uploadingSponsor, setUploadingSponsor] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,20 +46,63 @@ const AdminPage = () => {
     ]);
     setUsers(usersRes.data || []);
     setMatches(matchesRes.data || []);
-    setSponsors(sponsorsRes.data || []);
+    
+    // Separate active sponsors from inquiries
+    const allSponsors = sponsorsRes.data || [];
+    setSponsors(allSponsors.filter(s => s.is_active && !s.name.startsWith('INQUIRY:')));
+    setSponsorInquiries(allSponsors.filter(s => s.name.startsWith('INQUIRY:')));
+    
     setLoading(false);
   };
 
   const addSponsor = async () => {
-    if (!newSponsor.name || !newSponsor.icon_url || !newSponsor.link) {
-      toast.error('Please fill all fields');
+    if (!newSponsor.name) {
+      toast.error('Please enter sponsor name');
       return;
     }
-    const { error } = await supabase.from('sponsors').insert([newSponsor]);
-    if (error) toast.error('Failed to add sponsor');
-    else {
+
+    setUploadingSponsor(true);
+    
+    let iconUrl = '';
+    
+    // Upload icon if provided
+    if (sponsorIcon) {
+      const fileExt = sponsorIcon.name.split('.').pop();
+      const filePath = `sponsors/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, sponsorIcon, { upsert: true });
+      
+      if (uploadError) {
+        toast.error('Failed to upload icon');
+        setUploadingSponsor(false);
+        return;
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(filePath);
+      
+      iconUrl = urlData.publicUrl;
+    }
+    
+    const { error } = await supabase.from('sponsors').insert([{
+      name: newSponsor.name,
+      icon_url: iconUrl || 'https://via.placeholder.com/40',
+      link: newSponsor.link || '#',
+      is_active: true,
+    }]);
+    
+    setUploadingSponsor(false);
+    
+    if (error) {
+      toast.error('Failed to add sponsor');
+    } else {
       toast.success('Sponsor added!');
-      setNewSponsor({ name: '', icon_url: '', link: '' });
+      setNewSponsor({ name: '', link: '' });
+      setSponsorIcon(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       fetchAllData();
     }
   };
@@ -65,6 +111,19 @@ const AdminPage = () => {
     await supabase.from('sponsors').delete().eq('id', id);
     toast.success('Sponsor deleted');
     fetchAllData();
+  };
+
+  const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file type
+      const validTypes = ['image/png', 'image/svg+xml'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please upload a PNG or SVG file');
+        return;
+      }
+      setSponsorIcon(file);
+    }
   };
 
   if (!isAuthenticated) {
@@ -109,6 +168,7 @@ const AdminPage = () => {
               <TabsTrigger value="users"><Users className="w-4 h-4 mr-2" />Users ({users.length})</TabsTrigger>
               <TabsTrigger value="matches"><Heart className="w-4 h-4 mr-2" />Matches ({matches.length})</TabsTrigger>
               <TabsTrigger value="sponsors"><Gift className="w-4 h-4 mr-2" />Sponsors</TabsTrigger>
+              <TabsTrigger value="inquiries"><Building2 className="w-4 h-4 mr-2" />Inquiries ({sponsorInquiries.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="users">
@@ -156,23 +216,81 @@ const AdminPage = () => {
             <TabsContent value="sponsors">
               <div className="card-romantic space-y-4">
                 <div className="grid gap-4 md:grid-cols-3">
-                  <Input placeholder="Sponsor Name" value={newSponsor.name} onChange={(e) => setNewSponsor({ ...newSponsor, name: e.target.value })} />
-                  <Input placeholder="Icon URL" value={newSponsor.icon_url} onChange={(e) => setNewSponsor({ ...newSponsor, icon_url: e.target.value })} />
-                  <Input placeholder="Link" value={newSponsor.link} onChange={(e) => setNewSponsor({ ...newSponsor, link: e.target.value })} />
+                  <div>
+                    <Label>Sponsor Name *</Label>
+                    <Input 
+                      placeholder="Company Name" 
+                      value={newSponsor.name} 
+                      onChange={(e) => setNewSponsor({ ...newSponsor, name: e.target.value })} 
+                    />
+                  </div>
+                  <div>
+                    <Label>Icon (PNG/SVG)</Label>
+                    <Input 
+                      ref={fileInputRef}
+                      type="file" 
+                      accept=".png,.svg,image/png,image/svg+xml"
+                      onChange={handleIconChange}
+                    />
+                  </div>
+                  <div>
+                    <Label>Link (optional)</Label>
+                    <Input 
+                      placeholder="https://..." 
+                      value={newSponsor.link} 
+                      onChange={(e) => setNewSponsor({ ...newSponsor, link: e.target.value })} 
+                    />
+                  </div>
                 </div>
-                <Button onClick={addSponsor} className="btn-romantic"><Plus className="w-4 h-4 mr-2" />Add Sponsor</Button>
+                <Button onClick={addSponsor} className="btn-romantic" disabled={uploadingSponsor}>
+                  {uploadingSponsor ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                  ) : (
+                    <><Plus className="w-4 h-4 mr-2" />Add Sponsor</>
+                  )}
+                </Button>
                 
                 <div className="space-y-2 mt-4">
                   {sponsors.map((s) => (
                     <div key={s.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <img src={s.icon_url} alt={s.name} className="w-8 h-8 rounded" />
+                        {s.icon_url && <img src={s.icon_url} alt={s.name} className="w-8 h-8 rounded object-contain" />}
                         <span>{s.name}</span>
+                        {s.link && s.link !== '#' && (
+                          <a href={s.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                            {s.link.slice(0, 30)}...
+                          </a>
+                        )}
                       </div>
                       <Button size="sm" variant="destructive" onClick={() => deleteSponsor(s.id)}><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   ))}
+                  {sponsors.length === 0 && <p className="text-center text-muted-foreground py-4">No sponsors yet</p>}
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="inquiries">
+              <div className="card-romantic space-y-2">
+                <h3 className="text-lg font-semibold mb-4">Sponsor Inquiries</h3>
+                {sponsorInquiries.map((inquiry) => {
+                  const name = inquiry.name.replace('INQUIRY: ', '');
+                  const details = inquiry.icon_url; // Contains email, phone, etc.
+                  return (
+                    <div key={inquiry.id} className="p-4 bg-secondary/50 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{name}</span>
+                        <Button size="sm" variant="destructive" onClick={() => deleteSponsor(inquiry.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details}</p>
+                    </div>
+                  );
+                })}
+                {sponsorInquiries.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">No sponsor inquiries yet</p>
+                )}
               </div>
             </TabsContent>
           </Tabs>

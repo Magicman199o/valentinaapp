@@ -60,7 +60,7 @@ const AuthPage = () => {
           toast.error(error.message);
         } else {
           toast.success('Welcome back! 💕');
-          navigate('/');
+          navigate('/home');
         }
       } else if (mode === 'signup') {
         const validation = signupSchema.safeParse(formData);
@@ -80,7 +80,7 @@ const AuthPage = () => {
           toast.error(error.message);
         } else {
           toast.success('Welcome to Valentina! 💕');
-          navigate('/');
+          navigate('/home');
         }
       } else if (mode === 'forgot') {
         if (!formData.email) {
