@@ -158,6 +158,54 @@ export type Database = {
         }
         Relationships: []
       }
+      vip_codes: {
+        Row: {
+          assigned_user_id: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_used: boolean
+          match_id: string | null
+          used_at: string | null
+        }
+        Insert: {
+          assigned_user_id?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_used?: boolean
+          match_id?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          assigned_user_id?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_used?: boolean
+          match_id?: string | null
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_codes_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "vip_codes_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
