@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Logo from '@/components/Logo';
 import FloatingHearts from '@/components/FloatingHearts';
-import CountdownTimer from '@/components/CountdownTimer';
+import CircularCountdown from '@/components/CircularCountdown';
 import SponsorCarousel from '@/components/SponsorCarousel';
 import ViewProfileModal from '@/components/ViewProfileModal';
+import VIPCodeEntry from '@/components/VIPCodeEntry';
 import { toast } from 'sonner';
 
 interface Match {
@@ -41,6 +42,13 @@ interface Profile {
   profile_picture_url: string | null;
 }
 
+interface VIPCode {
+  id: string;
+  code: string;
+  is_used: boolean;
+  match_id: string | null;
+}
+
 const HomePage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -51,6 +59,10 @@ const HomePage = () => {
   const [showNoMatchModal, setShowNoMatchModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Match['matchedProfile'] | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [hasInstantMatch, setHasInstantMatch] = useState(false);
+  const [vipCode, setVipCode] = useState<VIPCode | null>(null);
+  const [showVIPEntry, setShowVIPEntry] = useState(false);
+  const [vipMatchRevealed, setVipMatchRevealed] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -70,6 +82,19 @@ const HomePage = () => {
 
     if (profileData) {
       setProfile(profileData);
+    }
+
+    // Fetch VIP code for this user
+    const { data: vipData } = await supabase
+      .from('vip_codes')
+      .select('*')
+      .eq('assigned_user_id', user.id)
+      .maybeSingle();
+
+    if (vipData) {
+      setVipCode(vipData);
+      setHasInstantMatch(true);
+      setVipMatchRevealed(vipData.is_used);
     }
 
     // Fetch matches
@@ -101,6 +126,12 @@ const HomePage = () => {
       return;
     }
 
+    // Check if any match is instant match
+    const hasInstant = matchesData.some(m => m.is_instant_match);
+    if (hasInstant) {
+      setHasInstantMatch(true);
+    }
+
     // Fetch matched user profiles
     const matchedUserIds = matchesData.map(m => 
       isUserMale ? m.female_user_id : m.male_user_id
@@ -125,6 +156,12 @@ const HomePage = () => {
 
   const handleInstantMatch = async () => {
     if (!user || !profile) return;
+
+    // Check if user already has a VIP code (instant match pending)
+    if (vipCode && !vipCode.is_used) {
+      setShowVIPEntry(true);
+      return;
+    }
 
     setInstantMatchLoading(true);
 
@@ -152,28 +189,20 @@ const HomePage = () => {
         return;
       }
 
-      const matchedUserId = availableUsers[0].user_id;
-      
-      // Create instant match
-      const { error } = await supabase
-        .from('matches')
-        .insert({
-          male_user_id: profile.gender === 'male' ? user.id : matchedUserId,
-          female_user_id: profile.gender === 'female' ? user.id : matchedUserId,
-          is_instant_match: true,
-        });
-
-      if (error) {
-        toast.error('Failed to create match');
-      } else {
-        toast.success('You got an instant match! 💕');
-        await fetchMatches();
-      }
+      // Show VIP code requirement
+      toast.info('Instant match requires a VIP code. Contact admin to get yours!');
+      setShowVIPEntry(true);
     } catch (err) {
       toast.error('An error occurred');
     } finally {
       setInstantMatchLoading(false);
     }
+  };
+
+  const handleVIPCodeVerified = async () => {
+    setVipMatchRevealed(true);
+    setShowVIPEntry(false);
+    await fetchMatches();
   };
 
   const handleLogout = async () => {
@@ -182,11 +211,20 @@ const HomePage = () => {
   };
 
   const getCountdownDate = () => {
-    if (!profile) return new Date();
-    const createdAt = new Date(profile.created_at);
-    createdAt.setDate(createdAt.getDate() + 4);
-    return createdAt;
+    // Valentine's Day 2025 at 6am
+    return new Date('2025-02-14T06:00:00');
   };
+
+  // Filter matches based on VIP status
+  const visibleMatches = matches.filter(match => {
+    if (match.is_instant_match) {
+      // Only show instant matches if VIP code is used
+      return vipMatchRevealed || (vipCode && vipCode.is_used);
+    }
+    return true;
+  });
+
+  const instantMatches = matches.filter(m => m.is_instant_match);
 
   if (loading) {
     return (
@@ -238,7 +276,10 @@ const HomePage = () => {
           transition={{ delay: 0.2 }}
           className="card-romantic mb-6"
         >
-          {matches.length > 0 ? (
+          {/* If user has instant match with VIP code not yet used */}
+          {hasInstantMatch && vipCode && !vipCode.is_used && !vipMatchRevealed ? (
+            <VIPCodeEntry userId={user!.id} onCodeVerified={handleVIPCodeVerified} />
+          ) : visibleMatches.length > 0 ? (
             <div className="space-y-4">
               <div className="text-center">
                 <Heart className="w-12 h-12 mx-auto text-primary animate-heartbeat mb-2" />
@@ -246,7 +287,7 @@ const HomePage = () => {
               </div>
               
               <div className="space-y-3">
-                {matches.map((match) => (
+                {visibleMatches.map((match) => (
                   <div
                     key={match.id}
                     className="flex items-center justify-between p-4 rounded-lg bg-secondary/50"
@@ -287,39 +328,43 @@ const HomePage = () => {
                 ))}
               </div>
             </div>
+          ) : hasInstantMatch && instantMatches.length > 0 ? (
+            // Has instant match but needs VIP code
+            <VIPCodeEntry userId={user!.id} onCodeVerified={handleVIPCodeVerified} />
           ) : (
-            <CountdownTimer 
+            <CircularCountdown 
               targetDate={getCountdownDate()} 
               onComplete={fetchMatches} 
-              gender={profile?.gender as 'male' | 'female'}
             />
           )}
         </motion.div>
 
-        {/* Instant Match Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Button
-            onClick={handleInstantMatch}
-            disabled={instantMatchLoading}
-            className="w-full py-6 text-lg gradient-romantic text-primary-foreground rounded-2xl shadow-lg hover:scale-[1.02] transition-transform"
+        {/* Instant Match Button - Only show if no instant match yet */}
+        {!hasInstantMatch && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
           >
-            {instantMatchLoading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Finding your match...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Zap className="w-5 h-5" />
-                GET AN INSTANT MATCH
-              </span>
-            )}
-          </Button>
-        </motion.div>
+            <Button
+              onClick={handleInstantMatch}
+              disabled={instantMatchLoading}
+              className="w-full py-6 text-lg gradient-romantic text-primary-foreground rounded-2xl shadow-lg hover:scale-[1.02] transition-transform"
+            >
+              {instantMatchLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Finding your match...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Zap className="w-5 h-5" />
+                  GET AN INSTANT MATCH
+                </span>
+              )}
+            </Button>
+          </motion.div>
+        )}
 
         {/* Edit Profile Link */}
         <motion.div
@@ -352,6 +397,13 @@ const HomePage = () => {
           <Button onClick={() => setShowNoMatchModal(false)} className="btn-romantic mt-4">
             Got it!
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* VIP Code Entry Modal */}
+      <Dialog open={showVIPEntry} onOpenChange={setShowVIPEntry}>
+        <DialogContent>
+          <VIPCodeEntry userId={user!.id} onCodeVerified={handleVIPCodeVerified} />
         </DialogContent>
       </Dialog>
 

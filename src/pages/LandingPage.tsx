@@ -122,7 +122,7 @@ const LandingPage = () => {
             Join thousands finding their perfect match through our unique matching experience.
           </p>
           
-          <p className="text-primary font-semibold text-lg mb-8">
+          <p className="text-primary font-bold text-2xl md:text-3xl mb-8 tracking-wide">
             VALENTINA 4.0
           </p>
 

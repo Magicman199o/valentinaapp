@@ -79,8 +79,8 @@ const AuthPage = () => {
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success('Welcome to Valentina! 💕');
-          navigate('/home');
+          toast.success('Account created! Proceeding to payment... 💕');
+          navigate('/payment');
         }
       } else if (mode === 'forgot') {
         if (!formData.email) {

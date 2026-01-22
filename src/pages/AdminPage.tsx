@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Heart, Gift, Plus, Trash2, Eye, LogOut, Loader2, Upload, Building2 } from 'lucide-react';
+import { Users, Heart, Gift, Plus, Trash2, Eye, LogOut, Loader2, Upload, Building2, Key, Link2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Logo from '@/components/Logo';
 import ViewProfileModal from '@/components/ViewProfileModal';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ const AdminPage = () => {
   const [matches, setMatches] = useState<any[]>([]);
   const [sponsors, setSponsors] = useState<any[]>([]);
   const [sponsorInquiries, setSponsorInquiries] = useState<any[]>([]);
+  const [vipCodes, setVipCodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [newSponsor, setNewSponsor] = useState({ name: '', link: '' });
   const [sponsorIcon, setSponsorIcon] = useState<File | null>(null);
@@ -26,6 +28,15 @@ const AdminPage = () => {
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Manual match state
+  const [manualMatchMale, setManualMatchMale] = useState('');
+  const [manualMatchFemale, setManualMatchFemale] = useState('');
+  const [creatingMatch, setCreatingMatch] = useState(false);
+
+  // VIP code state
+  const [newVIPUser, setNewVIPUser] = useState('');
+  const [creatingVIP, setCreatingVIP] = useState(false);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,13 +50,15 @@ const AdminPage = () => {
 
   const fetchAllData = async () => {
     setLoading(true);
-    const [usersRes, matchesRes, sponsorsRes] = await Promise.all([
+    const [usersRes, matchesRes, sponsorsRes, vipRes] = await Promise.all([
       supabase.from('profiles').select('*'),
       supabase.from('matches').select('*'),
       supabase.from('sponsors').select('*'),
+      supabase.from('vip_codes').select('*'),
     ]);
     setUsers(usersRes.data || []);
     setMatches(matchesRes.data || []);
+    setVipCodes(vipRes.data || []);
     
     // Separate active sponsors from inquiries
     const allSponsors = sponsorsRes.data || [];
@@ -126,6 +139,111 @@ const AdminPage = () => {
     }
   };
 
+  // Generate random VIP code
+  const generateVIPCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = 'VIP-';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  // Create VIP code for a user
+  const createVIPCode = async () => {
+    if (!newVIPUser) {
+      toast.error('Please select a user');
+      return;
+    }
+
+    setCreatingVIP(true);
+
+    // Check if user already has a VIP code
+    const existingCode = vipCodes.find(c => c.assigned_user_id === newVIPUser);
+    if (existingCode) {
+      toast.error('User already has a VIP code');
+      setCreatingVIP(false);
+      return;
+    }
+
+    const code = generateVIPCode();
+    
+    const { error } = await supabase.from('vip_codes').insert({
+      code,
+      assigned_user_id: newVIPUser,
+      is_used: false,
+    });
+
+    if (error) {
+      toast.error('Failed to create VIP code');
+    } else {
+      toast.success(`VIP code created: ${code}`);
+      setNewVIPUser('');
+      fetchAllData();
+    }
+    setCreatingVIP(false);
+  };
+
+  // Delete VIP code
+  const deleteVIPCode = async (id: string) => {
+    await supabase.from('vip_codes').delete().eq('id', id);
+    toast.success('VIP code deleted');
+    fetchAllData();
+  };
+
+  // Create manual match
+  const createManualMatch = async () => {
+    if (!manualMatchMale || !manualMatchFemale) {
+      toast.error('Please select both users');
+      return;
+    }
+
+    if (manualMatchMale === manualMatchFemale) {
+      toast.error('Cannot match user with themselves');
+      return;
+    }
+
+    setCreatingMatch(true);
+
+    // Check if match already exists
+    const existingMatch = matches.find(
+      m => (m.male_user_id === manualMatchMale && m.female_user_id === manualMatchFemale) ||
+           (m.male_user_id === manualMatchFemale && m.female_user_id === manualMatchMale)
+    );
+
+    if (existingMatch) {
+      toast.error('These users are already matched');
+      setCreatingMatch(false);
+      return;
+    }
+
+    const { error } = await supabase.from('matches').insert({
+      male_user_id: manualMatchMale,
+      female_user_id: manualMatchFemale,
+      is_instant_match: true,
+    });
+
+    if (error) {
+      toast.error('Failed to create match');
+    } else {
+      toast.success('Match created successfully!');
+      setManualMatchMale('');
+      setManualMatchFemale('');
+      fetchAllData();
+    }
+    setCreatingMatch(false);
+  };
+
+  // Delete match
+  const deleteMatch = async (id: string) => {
+    await supabase.from('matches').delete().eq('id', id);
+    toast.success('Match deleted');
+    fetchAllData();
+  };
+
+  const maleUsers = users.filter(u => u.gender === 'male');
+  const femaleUsers = users.filter(u => u.gender === 'female');
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary via-background to-muted">
@@ -164,9 +282,10 @@ const AdminPage = () => {
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : (
           <Tabs defaultValue="users">
-            <TabsList className="mb-4">
+            <TabsList className="mb-4 flex-wrap">
               <TabsTrigger value="users"><Users className="w-4 h-4 mr-2" />Users ({users.length})</TabsTrigger>
               <TabsTrigger value="matches"><Heart className="w-4 h-4 mr-2" />Matches ({matches.length})</TabsTrigger>
+              <TabsTrigger value="vip"><Key className="w-4 h-4 mr-2" />VIP Codes ({vipCodes.length})</TabsTrigger>
               <TabsTrigger value="sponsors"><Gift className="w-4 h-4 mr-2" />Sponsors</TabsTrigger>
               <TabsTrigger value="inquiries"><Building2 className="w-4 h-4 mr-2" />Inquiries ({sponsorInquiries.length})</TabsTrigger>
             </TabsList>
@@ -196,19 +315,143 @@ const AdminPage = () => {
             </TabsContent>
 
             <TabsContent value="matches">
-              <div className="card-romantic">
+              <div className="card-romantic space-y-6">
+                {/* Manual Match Creation */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Link2 className="w-5 h-5" />
+                    Create Manual Match
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                      <Label>Male User</Label>
+                      <Select value={manualMatchMale} onValueChange={setManualMatchMale}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select male user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {maleUsers.map(u => (
+                            <SelectItem key={u.user_id} value={u.user_id}>
+                              {u.name} ({u.email})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Female User</Label>
+                      <Select value={manualMatchFemale} onValueChange={setManualMatchFemale}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select female user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {femaleUsers.map(u => (
+                            <SelectItem key={u.user_id} value={u.user_id}>
+                              {u.name} ({u.email})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button onClick={createManualMatch} disabled={creatingMatch} className="btn-romantic">
+                        {creatingMatch ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Heart className="w-4 h-4 mr-2" />}
+                        Create Match
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <hr className="border-border" />
+
+                {/* Existing Matches */}
                 <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Existing Matches</h3>
                   {matches.map((m) => {
                     const male = users.find(u => u.user_id === m.male_user_id);
                     const female = users.find(u => u.user_id === m.female_user_id);
                     return (
                       <div key={m.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
                         <span>{male?.name || 'Unknown'} ❤️ {female?.name || 'Unknown'}</span>
-                        <span className="text-xs text-muted-foreground">{m.is_instant_match ? '⚡ Instant' : 'Regular'}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{m.is_instant_match ? '⚡ Instant' : 'Regular'}</span>
+                          <Button size="sm" variant="destructive" onClick={() => deleteMatch(m.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
                   {matches.length === 0 && <p className="text-center text-muted-foreground py-4">No matches yet</p>}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="vip">
+              <div className="card-romantic space-y-6">
+                {/* Create VIP Code */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Key className="w-5 h-5" />
+                    Create VIP Code
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label>Assign to User</Label>
+                      <Select value={newVIPUser} onValueChange={setNewVIPUser}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users
+                            .filter(u => !vipCodes.find(v => v.assigned_user_id === u.user_id))
+                            .map(u => (
+                              <SelectItem key={u.user_id} value={u.user_id}>
+                                {u.name} ({u.email}) - {u.gender}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button onClick={createVIPCode} disabled={creatingVIP} className="btn-romantic">
+                        {creatingVIP ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                        Generate VIP Code
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    VIP codes are unique to each user and can only be used once.
+                  </p>
+                </div>
+
+                <hr className="border-border" />
+
+                {/* Existing VIP Codes */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Existing VIP Codes</h3>
+                  {vipCodes.map((v) => {
+                    const user = users.find(u => u.user_id === v.assigned_user_id);
+                    return (
+                      <div key={v.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <code className="bg-background px-2 py-1 rounded font-mono text-sm">{v.code}</code>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${v.is_used ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                              {v.is_used ? 'Used' : 'Unused'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Assigned to: {user?.name || 'Unknown'} ({user?.email})
+                          </p>
+                        </div>
+                        <Button size="sm" variant="destructive" onClick={() => deleteVIPCode(v.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  {vipCodes.length === 0 && <p className="text-center text-muted-foreground py-4">No VIP codes yet</p>}
                 </div>
               </div>
             </TabsContent>
