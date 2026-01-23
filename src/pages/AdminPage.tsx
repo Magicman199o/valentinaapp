@@ -12,9 +12,30 @@ import Logo from '@/components/Logo';
 import ViewProfileModal from '@/components/ViewProfileModal';
 import { toast } from 'sonner';
 
+const ADMIN_SESSION_KEY = 'valentina_admin_authenticated';
+const ADMIN_USERNAME = 'Valentina';
+const ADMIN_PASSWORD = 'Valentina@admin';
+
+// Helper to call admin API
+const callAdminAPI = async (action: string, params: Record<string, any> = {}) => {
+  const { data, error } = await supabase.functions.invoke('admin-api', {
+    body: {
+      action,
+      adminUsername: ADMIN_USERNAME,
+      adminPassword: ADMIN_PASSWORD,
+      ...params,
+    },
+  });
+  if (error) throw error;
+  return data;
+};
+
 const AdminPage = () => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Check localStorage for persisted admin session
+    return localStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+  });
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [users, setUsers] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
@@ -38,33 +59,45 @@ const AdminPage = () => {
   const [newVIPUser, setNewVIPUser] = useState('');
   const [creatingVIP, setCreatingVIP] = useState(false);
 
+  // Load data on mount if authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAllData();
+    }
+  }, [isAuthenticated]);
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (loginData.username === 'Valentina' && loginData.password === 'Valentina@admin') {
       setIsAuthenticated(true);
+      localStorage.setItem(ADMIN_SESSION_KEY, 'true');
       fetchAllData();
     } else {
       toast.error('Invalid credentials');
     }
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+  };
+
   const fetchAllData = async () => {
     setLoading(true);
-    const [usersRes, matchesRes, sponsorsRes, vipRes] = await Promise.all([
-      supabase.from('profiles').select('*'),
-      supabase.from('matches').select('*'),
-      supabase.from('sponsors').select('*'),
-      supabase.from('vip_codes').select('*'),
-    ]);
-    setUsers(usersRes.data || []);
-    setMatches(matchesRes.data || []);
-    setVipCodes(vipRes.data || []);
-    
-    // Separate active sponsors from inquiries
-    const allSponsors = sponsorsRes.data || [];
-    setSponsors(allSponsors.filter(s => s.is_active && !s.name.startsWith('INQUIRY:')));
-    setSponsorInquiries(allSponsors.filter(s => s.name.startsWith('INQUIRY:')));
-    
+    try {
+      const data = await callAdminAPI('fetchAll');
+      setUsers(data.profiles || []);
+      setMatches(data.matches || []);
+      setVipCodes(data.vipCodes || []);
+      
+      // Separate active sponsors from inquiries
+      const allSponsors = data.sponsors || [];
+      setSponsors(allSponsors.filter((s: any) => s.is_active && !s.name.startsWith('INQUIRY:')));
+      setSponsorInquiries(allSponsors.filter((s: any) => s.name.startsWith('INQUIRY:')));
+    } catch (error: any) {
+      console.error('Error fetching admin data:', error);
+      toast.error('Failed to fetch data');
+    }
     setLoading(false);
   };
 
@@ -121,9 +154,13 @@ const AdminPage = () => {
   };
 
   const deleteSponsor = async (id: string) => {
-    await supabase.from('sponsors').delete().eq('id', id);
-    toast.success('Sponsor deleted');
-    fetchAllData();
+    try {
+      await callAdminAPI('deleteSponsor', { sponsorId: id });
+      toast.success('Sponsor deleted');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to delete sponsor');
+    }
   };
 
   const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,27 +205,26 @@ const AdminPage = () => {
 
     const code = generateVIPCode();
     
-    const { error } = await supabase.from('vip_codes').insert({
-      code,
-      assigned_user_id: newVIPUser,
-      is_used: false,
-    });
-
-    if (error) {
-      toast.error('Failed to create VIP code');
-    } else {
+    try {
+      await callAdminAPI('createVIPCode', { code, assignedUserId: newVIPUser });
       toast.success(`VIP code created: ${code}`);
       setNewVIPUser('');
       fetchAllData();
+    } catch (error) {
+      toast.error('Failed to create VIP code');
     }
     setCreatingVIP(false);
   };
 
   // Delete VIP code
   const deleteVIPCode = async (id: string) => {
-    await supabase.from('vip_codes').delete().eq('id', id);
-    toast.success('VIP code deleted');
-    fetchAllData();
+    try {
+      await callAdminAPI('deleteVIPCode', { vipId: id });
+      toast.success('VIP code deleted');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to delete VIP code');
+    }
   };
 
   // Create manual match
@@ -217,28 +253,27 @@ const AdminPage = () => {
       return;
     }
 
-    const { error } = await supabase.from('matches').insert({
-      male_user_id: manualMatchMale,
-      female_user_id: manualMatchFemale,
-      is_instant_match: true,
-    });
-
-    if (error) {
-      toast.error('Failed to create match');
-    } else {
+    try {
+      await callAdminAPI('createMatch', { maleUserId: manualMatchMale, femaleUserId: manualMatchFemale });
       toast.success('Match created successfully!');
       setManualMatchMale('');
       setManualMatchFemale('');
       fetchAllData();
+    } catch (error) {
+      toast.error('Failed to create match');
     }
     setCreatingMatch(false);
   };
 
   // Delete match
   const deleteMatch = async (id: string) => {
-    await supabase.from('matches').delete().eq('id', id);
-    toast.success('Match deleted');
-    fetchAllData();
+    try {
+      await callAdminAPI('deleteMatch', { matchId: id });
+      toast.success('Match deleted');
+      fetchAllData();
+    } catch (error) {
+      toast.error('Failed to delete match');
+    }
   };
 
   const maleUsers = users.filter(u => u.gender === 'male');
@@ -272,7 +307,7 @@ const AdminPage = () => {
     <div className="min-h-screen bg-background">
       <header className="p-4 flex items-center justify-between border-b bg-card">
         <Logo size="sm" />
-        <Button variant="ghost" onClick={() => setIsAuthenticated(false)}><LogOut className="w-4 h-4 mr-2" />Logout</Button>
+        <Button variant="ghost" onClick={handleLogout}><LogOut className="w-4 h-4 mr-2" />Logout</Button>
       </header>
 
       <main className="container max-w-6xl mx-auto p-4">

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Heart, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +28,10 @@ const signupSchema = z.object({
 type AuthMode = 'login' | 'signup' | 'forgot';
 
 const AuthPage = () => {
-  const [mode, setMode] = useState<AuthMode>('login');
+  // Check URL params for initial mode (default to signup now)
+  const [searchParams] = React.useState(() => new URLSearchParams(window.location.search));
+  const initialMode = searchParams.get('mode') as AuthMode || 'signup';
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
