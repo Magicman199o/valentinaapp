@@ -18,7 +18,7 @@ const PaymentPage = () => {
   const [profile, setProfile] = useState<{ name: string; email: string } | null>(null);
 
   const reference = searchParams.get('reference');
-  const status = searchParams.get('status');
+  const trxref = searchParams.get('trxref');
 
   useEffect(() => {
     if (!user) {
@@ -29,10 +29,10 @@ const PaymentPage = () => {
     fetchProfile();
 
     // Handle Paystack callback
-    if (reference && status === 'success') {
-      verifyPayment(reference);
+    if (reference || trxref) {
+      verifyPayment(reference || trxref!);
     }
-  }, [user, reference, status]);
+  }, [user, reference, trxref]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -56,66 +56,66 @@ const PaymentPage = () => {
   const verifyPayment = async (ref: string) => {
     setVerifying(true);
     
-    // In production, you would verify with Paystack API
-    // For now, we'll update the payment status
-    const { error } = await supabase
-      .from('profiles')
-      .update({ payment_status: true })
-      .eq('user_id', user?.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('paystack-verify', {
+        body: { reference: ref },
+      });
 
-    if (error) {
-      toast.error('Payment verification failed');
-    } else {
-      toast.success('Payment successful! Welcome to Valentina! 💕');
-      setTimeout(() => navigate('/home'), 2000);
+      if (error) {
+        throw error;
+      }
+
+      if (data?.data?.status === 'success') {
+        toast.success('Payment successful! Welcome to Valentina! 💕');
+        setTimeout(() => navigate('/home'), 2000);
+      } else {
+        toast.error('Payment could not be verified. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Payment verification error:', err);
+      toast.error('Payment verification failed. Please contact support.');
     }
+    
     setVerifying(false);
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (!user || !profile) return;
+    
     setLoading(true);
     
-    // Paystack payment initialization
-    // You'll need to integrate Paystack's inline JS or redirect
-    // For now, this creates the flow structure
+    try {
+      const callbackUrl = `${window.location.origin}/payment`;
+      
+      const { data, error } = await supabase.functions.invoke('paystack-init', {
+        body: {
+          email: profile.email,
+          amount: 200000, // 2000 NGN in kobo
+          userId: user.id,
+          callbackUrl,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.data?.authorization_url) {
+        // Redirect to Paystack
+        window.location.href = data.data.authorization_url;
+      } else {
+        toast.error('Failed to initialize payment. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Payment init error:', err);
+      toast.error('Failed to start payment. Please try again.');
+    }
     
-    const paystackUrl = `https://paystack.com/pay/valentina-signup`;
-    
-    // In production, you would:
-    // 1. Call your backend to initialize transaction
-    // 2. Get the authorization_url
-    // 3. Redirect user to Paystack
-    
-    // For demo, we'll simulate the redirect structure
-    toast.info('Redirecting to payment...');
-    
-    // This is where you'd redirect to Paystack
-    // window.location.href = paystackUrl;
-    
-    // For testing without actual Paystack, simulate success
-    setTimeout(() => {
-      setLoading(false);
-      // Simulate callback
-      navigate('/payment?reference=test_ref_123&status=success');
-    }, 2000);
+    setLoading(false);
   };
 
-  if (verifying) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary via-background to-muted">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-lg font-medium">Verifying your payment...</p>
-        </motion.div>
-      </div>
-    );
-  }
 
-  if (reference && status === 'success') {
+  if (verifying || (reference || trxref)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary via-background to-muted">
         <FloatingHearts />
@@ -124,15 +124,25 @@ const PaymentPage = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="card-romantic text-center max-w-md mx-4"
         >
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-serif font-bold mb-2">Payment Successful!</h1>
-          <p className="text-muted-foreground mb-4">
-            Welcome to Valentina! Your journey to love begins now.
-          </p>
-          <Button onClick={() => navigate('/home')} className="btn-romantic">
-            Continue to App
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+          {verifying ? (
+            <>
+              <Loader2 className="w-16 h-16 animate-spin text-primary mx-auto mb-4" />
+              <h1 className="text-2xl font-serif font-bold mb-2">Verifying Payment...</h1>
+              <p className="text-muted-foreground">Please wait while we confirm your payment.</p>
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h1 className="text-2xl font-serif font-bold mb-2">Payment Successful!</h1>
+              <p className="text-muted-foreground mb-4">
+                Welcome to Valentina! Your journey to love begins now.
+              </p>
+              <Button onClick={() => navigate('/home')} className="btn-romantic">
+                Continue to App
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </>
+          )}
         </motion.div>
       </div>
     );
