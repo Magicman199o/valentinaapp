@@ -49,29 +49,38 @@ const handler = async (req: Request): Promise<Response> => {
         };
         break;
 
-      case "createVIPCode":
-        const { code, assignedUserId } = params;
-        const { data: vipData, error: vipError } = await supabase
-          .from("vip_codes")
-          .insert({ code, assigned_user_id: assignedUserId, is_used: false })
-          .select()
-          .single();
-        if (vipError) throw vipError;
-        result = vipData;
-        break;
-
-      case "deleteVIPCode":
-        const { vipId } = params;
-        const { error: delVipError } = await supabase
-          .from("vip_codes")
-          .delete()
-          .eq("id", vipId);
-        if (delVipError) throw delVipError;
-        result = { success: true };
-        break;
-
-      case "createMatch":
-        const { maleUserId, femaleUserId } = params;
+      case "createVIPCodeWithMatch":
+        // Create VIP code and match simultaneously
+        const { code, assignedUserId, matchWithUserId } = params;
+        
+        // Get both users' genders to determine male/female
+        const { data: users } = await supabase
+          .from("profiles")
+          .select("user_id, gender")
+          .in("user_id", [assignedUserId, matchWithUserId]);
+        
+        if (!users || users.length !== 2) {
+          throw new Error("Could not find both users");
+        }
+        
+        const assignedUser = users.find(u => u.user_id === assignedUserId);
+        const matchUser = users.find(u => u.user_id === matchWithUserId);
+        
+        if (!assignedUser || !matchUser) {
+          throw new Error("Could not find user profiles");
+        }
+        
+        // Determine male and female for the match
+        let maleUserId: string, femaleUserId: string;
+        if (assignedUser.gender === "male") {
+          maleUserId = assignedUserId;
+          femaleUserId = matchWithUserId;
+        } else {
+          maleUserId = matchWithUserId;
+          femaleUserId = assignedUserId;
+        }
+        
+        // Create the match first
         const { data: matchData, error: matchError } = await supabase
           .from("matches")
           .insert({
@@ -81,8 +90,83 @@ const handler = async (req: Request): Promise<Response> => {
           })
           .select()
           .single();
+        
         if (matchError) throw matchError;
-        result = matchData;
+        
+        // Create VIP code linked to the match
+        const { data: vipData, error: vipError } = await supabase
+          .from("vip_codes")
+          .insert({ 
+            code, 
+            assigned_user_id: assignedUserId, 
+            is_used: false,
+            match_id: matchData.id
+          })
+          .select()
+          .single();
+        
+        if (vipError) {
+          // Rollback the match if VIP code creation fails
+          await supabase.from("matches").delete().eq("id", matchData.id);
+          throw vipError;
+        }
+        
+        result = { vipCode: vipData, match: matchData };
+        break;
+
+      case "createVIPCode":
+        // Legacy: create VIP code without match (kept for backwards compatibility)
+        const { code: legacyCode, assignedUserId: legacyUserId } = params;
+        const { data: legacyVipData, error: legacyVipError } = await supabase
+          .from("vip_codes")
+          .insert({ code: legacyCode, assigned_user_id: legacyUserId, is_used: false })
+          .select()
+          .single();
+        if (legacyVipError) throw legacyVipError;
+        result = legacyVipData;
+        break;
+
+      case "deleteVIPCode":
+        const { vipId } = params;
+        
+        // First get the VIP code to check if it has a match
+        const { data: vipToDelete } = await supabase
+          .from("vip_codes")
+          .select("match_id")
+          .eq("id", vipId)
+          .single();
+        
+        // Delete the VIP code
+        const { error: delVipError } = await supabase
+          .from("vip_codes")
+          .delete()
+          .eq("id", vipId);
+        if (delVipError) throw delVipError;
+        
+        // If there was an associated match, delete it too (if code wasn't used yet)
+        if (vipToDelete?.match_id) {
+          await supabase
+            .from("matches")
+            .delete()
+            .eq("id", vipToDelete.match_id);
+        }
+        
+        result = { success: true };
+        break;
+
+      case "createMatch":
+        const { maleUserId: manualMaleId, femaleUserId: manualFemaleId } = params;
+        const { data: manualMatchData, error: manualMatchError } = await supabase
+          .from("matches")
+          .insert({
+            male_user_id: manualMaleId,
+            female_user_id: manualFemaleId,
+            is_instant_match: true,
+          })
+          .select()
+          .single();
+        if (manualMatchError) throw manualMatchError;
+        result = manualMatchData;
         break;
 
       case "deleteMatch":
