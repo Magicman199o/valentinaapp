@@ -10,26 +10,30 @@ import Logo from '@/components/Logo';
 import FloatingHearts from '@/components/FloatingHearts';
 import CircularCountdown from '@/components/CircularCountdown';
 import SponsorCarousel from '@/components/SponsorCarousel';
-import ViewProfileModal from '@/components/ViewProfileModal';
+import MatchRevealCard from '@/components/MatchRevealCard';
+import InstantMatchPrompt from '@/components/InstantMatchPrompt';
 import VIPCodeEntry from '@/components/VIPCodeEntry';
 import { toast } from 'sonner';
+
+interface MatchedProfile {
+  user_id: string;
+  name: string;
+  profile_picture_url: string | null;
+  about: string | null;
+  interests: string[] | null;
+  wishlist: string | null;
+  relationship_status: string | null;
+  show_profile_to_match: boolean;
+  gender: string;
+  whatsapp_phone: string;
+  email?: string;
+}
 
 interface Match {
   id: string;
   matched_at: string;
   is_instant_match: boolean;
-  matchedProfile: {
-    user_id: string;
-    name: string;
-    profile_picture_url: string | null;
-    about: string | null;
-    interests: string[] | null;
-    wishlist: string | null;
-    relationship_status: string | null;
-    show_profile_to_match: boolean;
-    gender: string;
-    whatsapp_phone: string;
-  } | null;
+  matchedProfile: MatchedProfile | null;
 }
 
 interface Profile {
@@ -55,14 +59,11 @@ const HomePage = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [instantMatchLoading, setInstantMatchLoading] = useState(false);
-  const [showNoMatchModal, setShowNoMatchModal] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<Match['matchedProfile'] | null>(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [hasInstantMatch, setHasInstantMatch] = useState(false);
-  const [vipCode, setVipCode] = useState<VIPCode | null>(null);
+  const [showInstantMatchPrompt, setShowInstantMatchPrompt] = useState(false);
   const [showVIPEntry, setShowVIPEntry] = useState(false);
+  const [vipCode, setVipCode] = useState<VIPCode | null>(null);
   const [vipMatchRevealed, setVipMatchRevealed] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -93,7 +94,6 @@ const HomePage = () => {
 
     if (vipData) {
       setVipCode(vipData);
-      setHasInstantMatch(true);
       setVipMatchRevealed(vipData.is_used);
     }
 
@@ -121,31 +121,25 @@ const HomePage = () => {
       .select('*')
       .or(`male_user_id.eq.${user.id},female_user_id.eq.${user.id}`);
 
-    if (!matchesData) {
+    if (!matchesData || matchesData.length === 0) {
       setMatches([]);
       return;
     }
 
-    // Check if any match is instant match
-    const hasInstant = matchesData.some(m => m.is_instant_match);
-    if (hasInstant) {
-      setHasInstantMatch(true);
-    }
-
-    // Fetch matched user profiles
+    // Fetch matched user profiles with email
     const matchedUserIds = matchesData.map(m => 
       isUserMale ? m.female_user_id : m.male_user_id
     );
 
     const { data: matchedProfiles } = await supabase
       .from('profiles')
-      .select('user_id, name, profile_picture_url, about, interests, wishlist, relationship_status, show_profile_to_match, gender, whatsapp_phone')
+      .select('user_id, name, profile_picture_url, about, interests, wishlist, relationship_status, show_profile_to_match, gender, whatsapp_phone, email')
       .in('user_id', matchedUserIds);
 
     const formattedMatches: Match[] = matchesData.map(match => ({
       id: match.id,
       matched_at: match.matched_at,
-      is_instant_match: match.is_instant_match,
+      is_instant_match: match.is_instant_match || false,
       matchedProfile: matchedProfiles?.find(p => 
         p.user_id === (isUserMale ? match.female_user_id : match.male_user_id)
       ) || null,
@@ -154,55 +148,27 @@ const HomePage = () => {
     setMatches(formattedMatches);
   };
 
-  const handleInstantMatch = async () => {
-    if (!user || !profile) return;
-
-    // Check if user already has a VIP code (instant match pending)
+  const handleInstantMatch = () => {
+    // If user has a VIP code, show entry modal directly
     if (vipCode && !vipCode.is_used) {
       setShowVIPEntry(true);
       return;
     }
+    
+    // Show the prompt to contact admin
+    setShowInstantMatchPrompt(true);
+  };
 
-    setInstantMatchLoading(true);
-
-    try {
-      const oppositeGender = profile.gender === 'male' ? 'female' : 'male';
-      
-      // Find available user of opposite gender who is not already matched
-      const { data: existingMatches } = await supabase
-        .from('matches')
-        .select('male_user_id, female_user_id');
-
-      const matchedUserIds = existingMatches?.flatMap(m => [m.male_user_id, m.female_user_id]) || [];
-      matchedUserIds.push(user.id); // Exclude current user
-
-      const { data: availableUsers } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('gender', oppositeGender)
-        .not('user_id', 'in', `(${matchedUserIds.join(',')})`)
-        .limit(1);
-
-      if (!availableUsers || availableUsers.length === 0) {
-        setShowNoMatchModal(true);
-        setInstantMatchLoading(false);
-        return;
-      }
-
-      // Show VIP code requirement
-      toast.info('Instant match requires a VIP code. Contact admin to get yours!');
-      setShowVIPEntry(true);
-    } catch (err) {
-      toast.error('An error occurred');
-    } finally {
-      setInstantMatchLoading(false);
-    }
+  const handleEnterCode = () => {
+    setShowInstantMatchPrompt(false);
+    setShowVIPEntry(true);
   };
 
   const handleVIPCodeVerified = async () => {
     setVipMatchRevealed(true);
     setShowVIPEntry(false);
     await fetchMatches();
+    toast.success('Your match has been revealed! 💕');
   };
 
   const handleLogout = async () => {
@@ -224,7 +190,9 @@ const HomePage = () => {
     return true;
   });
 
-  const instantMatches = matches.filter(m => m.is_instant_match);
+  // Check if user has pending VIP code (assigned but not used)
+  const hasPendingVIPCode = vipCode && !vipCode.is_used;
+  const hasUsedVIPCode = vipCode && vipCode.is_used;
 
   if (loading) {
     return (
@@ -269,17 +237,21 @@ const HomePage = () => {
           <p className="text-muted-foreground">Your journey to love begins here</p>
         </motion.div>
 
-        {/* Countdown or Match Display */}
+        {/* Main Display Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
           className="card-romantic mb-6"
         >
-          {/* If user has instant match with VIP code not yet used */}
-          {hasInstantMatch && vipCode && !vipCode.is_used && !vipMatchRevealed ? (
-            <VIPCodeEntry userId={user!.id} onCodeVerified={handleVIPCodeVerified} />
-          ) : visibleMatches.length > 0 ? (
+          {/* Show revealed match if VIP code was used */}
+          {hasUsedVIPCode && visibleMatches.length > 0 ? (
+            <MatchRevealCard 
+              profile={visibleMatches[0].matchedProfile!} 
+              isInstantMatch={visibleMatches[0].is_instant_match}
+            />
+          ) : visibleMatches.length > 0 && !hasPendingVIPCode ? (
+            // Show regular matches (non-instant)
             <div className="space-y-4">
               <div className="text-center">
                 <Heart className="w-12 h-12 mx-auto text-primary animate-heartbeat mb-2" />
@@ -290,7 +262,8 @@ const HomePage = () => {
                 {visibleMatches.map((match) => (
                   <div
                     key={match.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/50"
+                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary/70 transition-colors"
+                    onClick={() => setSelectedMatch(match)}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-primary/10">
@@ -309,38 +282,43 @@ const HomePage = () => {
                       <div>
                         <p className="font-medium">{match.matchedProfile?.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {match.is_instant_match ? '⚡ Instant Match' : '💕 Regular Match'}
+                          {match.is_instant_match ? '⚡ Instant Match' : '💕 Your Match'}
                         </p>
                       </div>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setSelectedProfile(match.matchedProfile);
-                        setShowProfileModal(true);
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedMatch(match);
                       }}
                     >
                       <Eye className="w-4 h-4 mr-1" />
-                      View Profile
+                      View
                     </Button>
                   </div>
                 ))}
               </div>
             </div>
-          ) : hasInstantMatch && instantMatches.length > 0 ? (
-            // Has instant match but needs VIP code
-            <VIPCodeEntry userId={user!.id} onCodeVerified={handleVIPCodeVerified} />
           ) : (
-            <CircularCountdown 
-              targetDate={getCountdownDate()} 
-              onComplete={fetchMatches} 
-            />
+            // Show countdown - match is pending
+            <div className="space-y-6">
+              <CircularCountdown 
+                targetDate={getCountdownDate()} 
+                onComplete={fetchMatches} 
+              />
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Your match will be revealed on Valentine's Day! ❤️
+                </p>
+              </div>
+            </div>
           )}
         </motion.div>
 
-        {/* Instant Match Button - Only show if no instant match yet */}
-        {!hasInstantMatch && (
+        {/* Instant Match Button - Only show if no matches yet and no used VIP code */}
+        {!hasUsedVIPCode && visibleMatches.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -348,20 +326,12 @@ const HomePage = () => {
           >
             <Button
               onClick={handleInstantMatch}
-              disabled={instantMatchLoading}
               className="w-full py-6 text-lg gradient-romantic text-primary-foreground rounded-2xl shadow-lg hover:scale-[1.02] transition-transform"
             >
-              {instantMatchLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Finding your match...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Zap className="w-5 h-5" />
-                  GET AN INSTANT MATCH
-                </span>
-              )}
+              <span className="flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                GET AN INSTANT MATCH
+              </span>
             </Button>
           </motion.div>
         )}
@@ -381,22 +351,10 @@ const HomePage = () => {
         </motion.div>
       </main>
 
-      {/* No Match Modal */}
-      <Dialog open={showNoMatchModal} onOpenChange={setShowNoMatchModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-serif text-xl flex items-center gap-2">
-              <Heart className="w-5 h-5 text-primary" />
-              No Available Matches Yet
-            </DialogTitle>
-            <DialogDescription>
-              Don't worry! We'll match you as soon as someone suitable becomes available. 
-              Keep your profile updated to attract the best matches!
-            </DialogDescription>
-          </DialogHeader>
-          <Button onClick={() => setShowNoMatchModal(false)} className="btn-romantic mt-4">
-            Got it!
-          </Button>
+      {/* Instant Match Prompt Modal */}
+      <Dialog open={showInstantMatchPrompt} onOpenChange={setShowInstantMatchPrompt}>
+        <DialogContent className="max-w-md">
+          <InstantMatchPrompt onEnterCode={handleEnterCode} />
         </DialogContent>
       </Dialog>
 
@@ -407,12 +365,17 @@ const HomePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View Profile Modal */}
-      <ViewProfileModal
-        open={showProfileModal}
-        onOpenChange={setShowProfileModal}
-        profile={selectedProfile}
-      />
+      {/* Match Detail Modal */}
+      <Dialog open={!!selectedMatch} onOpenChange={(open) => !open && setSelectedMatch(null)}>
+        <DialogContent className="max-w-md">
+          {selectedMatch?.matchedProfile && (
+            <MatchRevealCard 
+              profile={selectedMatch.matchedProfile} 
+              isInstantMatch={selectedMatch.is_instant_match}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

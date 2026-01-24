@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, Heart, Gift, Plus, Trash2, Eye, LogOut, Loader2, Upload, Building2, Key, Link2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,9 +30,7 @@ const callAdminAPI = async (action: string, params: Record<string, any> = {}) =>
 };
 
 const AdminPage = () => {
-  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // Check localStorage for persisted admin session
     return localStorage.getItem(ADMIN_SESSION_KEY) === 'true';
   });
   const [loginData, setLoginData] = useState({ username: '', password: '' });
@@ -55,11 +52,11 @@ const AdminPage = () => {
   const [manualMatchFemale, setManualMatchFemale] = useState('');
   const [creatingMatch, setCreatingMatch] = useState(false);
 
-  // VIP code state
+  // VIP code state - now includes match selection
   const [newVIPUser, setNewVIPUser] = useState('');
+  const [vipMatchWith, setVipMatchWith] = useState('');
   const [creatingVIP, setCreatingVIP] = useState(false);
 
-  // Load data on mount if authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchAllData();
@@ -90,7 +87,6 @@ const AdminPage = () => {
       setMatches(data.matches || []);
       setVipCodes(data.vipCodes || []);
       
-      // Separate active sponsors from inquiries
       const allSponsors = data.sponsors || [];
       setSponsors(allSponsors.filter((s: any) => s.is_active && !s.name.startsWith('INQUIRY:')));
       setSponsorInquiries(allSponsors.filter((s: any) => s.name.startsWith('INQUIRY:')));
@@ -111,7 +107,6 @@ const AdminPage = () => {
     
     let iconUrl = '';
     
-    // Upload icon if provided
     if (sponsorIcon) {
       const fileExt = sponsorIcon.name.split('.').pop();
       const filePath = `sponsors/${Date.now()}.${fileExt}`;
@@ -166,7 +161,6 @@ const AdminPage = () => {
   const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file type
       const validTypes = ['image/png', 'image/svg+xml'];
       if (!validTypes.includes(file.type)) {
         toast.error('Please upload a PNG or SVG file');
@@ -186,10 +180,24 @@ const AdminPage = () => {
     return code;
   };
 
-  // Create VIP code for a user
+  // Get opposite gender users for VIP match selection
+  const getOppositeGenderUsers = (userId: string) => {
+    const selectedUser = users.find(u => u.user_id === userId);
+    if (!selectedUser) return [];
+    
+    const oppositeGender = selectedUser.gender === 'male' ? 'female' : 'male';
+    return users.filter(u => u.gender === oppositeGender);
+  };
+
+  // Create VIP code with match
   const createVIPCode = async () => {
     if (!newVIPUser) {
       toast.error('Please select a user');
+      return;
+    }
+
+    if (!vipMatchWith) {
+      toast.error('Please select who to match with');
       return;
     }
 
@@ -203,15 +211,29 @@ const AdminPage = () => {
       return;
     }
 
+    // Check same gender matching
+    const user1 = users.find(u => u.user_id === newVIPUser);
+    const user2 = users.find(u => u.user_id === vipMatchWith);
+    if (user1?.gender === user2?.gender) {
+      toast.error('Cannot match users of the same gender');
+      setCreatingVIP(false);
+      return;
+    }
+
     const code = generateVIPCode();
     
     try {
-      await callAdminAPI('createVIPCode', { code, assignedUserId: newVIPUser });
+      await callAdminAPI('createVIPCodeWithMatch', { 
+        code, 
+        assignedUserId: newVIPUser,
+        matchWithUserId: vipMatchWith
+      });
       toast.success(`VIP code created: ${code}`);
       setNewVIPUser('');
+      setVipMatchWith('');
       fetchAllData();
-    } catch (error) {
-      toast.error('Failed to create VIP code');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create VIP code');
     }
     setCreatingVIP(false);
   };
@@ -241,7 +263,6 @@ const AdminPage = () => {
 
     setCreatingMatch(true);
 
-    // Check if match already exists
     const existingMatch = matches.find(
       m => (m.male_user_id === manualMatchMale && m.female_user_id === manualMatchFemale) ||
            (m.male_user_id === manualMatchFemale && m.female_user_id === manualMatchMale)
@@ -278,6 +299,7 @@ const AdminPage = () => {
 
   const maleUsers = users.filter(u => u.gender === 'male');
   const femaleUsers = users.filter(u => u.gender === 'female');
+  const oppositeGenderOptions = newVIPUser ? getOppositeGenderUsers(newVIPUser) : [];
 
   if (!isAuthenticated) {
     return (
@@ -424,16 +446,16 @@ const AdminPage = () => {
 
             <TabsContent value="vip">
               <div className="card-romantic space-y-6">
-                {/* Create VIP Code */}
+                {/* Create VIP Code with Match Selection */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Key className="w-5 h-5" />
-                    Create VIP Code
+                    Create VIP Code with Match
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-3">
                     <div>
-                      <Label>Assign to User</Label>
-                      <Select value={newVIPUser} onValueChange={setNewVIPUser}>
+                      <Label>Assign VIP Code to</Label>
+                      <Select value={newVIPUser} onValueChange={(val) => { setNewVIPUser(val); setVipMatchWith(''); }}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select user" />
                         </SelectTrigger>
@@ -448,15 +470,30 @@ const AdminPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <Label>Match with (opposite gender)</Label>
+                      <Select value={vipMatchWith} onValueChange={setVipMatchWith} disabled={!newVIPUser}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={newVIPUser ? "Select match" : "Select user first"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {oppositeGenderOptions.map(u => (
+                            <SelectItem key={u.user_id} value={u.user_id}>
+                              {u.name} ({u.email})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="flex items-end">
-                      <Button onClick={createVIPCode} disabled={creatingVIP} className="btn-romantic">
+                      <Button onClick={createVIPCode} disabled={creatingVIP || !newVIPUser || !vipMatchWith} className="btn-romantic">
                         {creatingVIP ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                         Generate VIP Code
                       </Button>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    VIP codes are unique to each user and can only be used once.
+                    VIP codes allow instant match reveal. The match will be created when the code is generated and revealed when the user enters the code.
                   </p>
                 </div>
 
@@ -467,6 +504,12 @@ const AdminPage = () => {
                   <h3 className="text-lg font-semibold">Existing VIP Codes</h3>
                   {vipCodes.map((v) => {
                     const user = users.find(u => u.user_id === v.assigned_user_id);
+                    const match = matches.find(m => m.id === v.match_id);
+                    let matchedWithUser = null;
+                    if (match) {
+                      const matchedUserId = match.male_user_id === v.assigned_user_id ? match.female_user_id : match.male_user_id;
+                      matchedWithUser = users.find(u => u.user_id === matchedUserId);
+                    }
                     return (
                       <div key={v.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
                         <div className="space-y-1">
@@ -479,8 +522,13 @@ const AdminPage = () => {
                           <p className="text-sm text-muted-foreground">
                             Assigned to: {user?.name || 'Unknown'} ({user?.email})
                           </p>
+                          {matchedWithUser && (
+                            <p className="text-sm text-primary">
+                              Matched with: {matchedWithUser.name}
+                            </p>
+                          )}
                         </div>
-                        <Button size="sm" variant="destructive" onClick={() => deleteVIPCode(v.id)}>
+                        <Button size="sm" variant="destructive" onClick={() => deleteVIPCode(v.id)} disabled={v.is_used}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -553,7 +601,7 @@ const AdminPage = () => {
                 <h3 className="text-lg font-semibold mb-4">Sponsor Inquiries</h3>
                 {sponsorInquiries.map((inquiry) => {
                   const name = inquiry.name.replace('INQUIRY: ', '');
-                  const details = inquiry.icon_url; // Contains email, phone, etc.
+                  const details = inquiry.icon_url;
                   return (
                     <div key={inquiry.id} className="p-4 bg-secondary/50 rounded-lg space-y-2">
                       <div className="flex items-center justify-between">
