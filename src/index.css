@@ -6,30 +6,30 @@
 
 @layer base {
   :root {
-    /* Romantic burgundy/rose palette */
-    --background: 20 20% 98%;
-    --foreground: 350 50% 15%;
+    /* Clean romantic pink/coral palette */
+    --background: 0 0% 100%;
+    --foreground: 220 15% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 350 50% 15%;
+    --card-foreground: 220 15% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 350 50% 15%;
+    --popover-foreground: 220 15% 20%;
 
-    /* Primary: Deep burgundy */
-    --primary: 340 70% 35%;
+    /* Primary: Vibrant coral/red */
+    --primary: 350 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Soft rose */
-    --secondary: 350 60% 92%;
-    --secondary-foreground: 340 70% 30%;
+    /* Secondary: Soft blush pink */
+    --secondary: 350 70% 95%;
+    --secondary-foreground: 350 70% 40%;
 
     /* Muted tones */
-    --muted: 350 30% 94%;
-    --muted-foreground: 350 20% 45%;
+    --muted: 350 30% 96%;
+    --muted-foreground: 220 10% 50%;
 
-    /* Accent: Rose gold */
-    --accent: 20 60% 65%;
+    /* Accent: Warm coral */
+    --accent: 15 90% 60%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive */
@@ -41,70 +41,73 @@
     --success-foreground: 0 0% 100%;
 
     /* UI elements */
-    --border: 350 30% 88%;
-    --input: 350 30% 88%;
-    --ring: 340 70% 45%;
+    --border: 350 20% 90%;
+    --input: 350 20% 90%;
+    --ring: 350 85% 55%;
 
     --radius: 0.75rem;
 
-    /* Romantic gradients */
-    --gradient-romantic: linear-gradient(135deg, hsl(340, 70%, 35%) 0%, hsl(350, 60%, 50%) 50%, hsl(20, 60%, 65%) 100%);
-    --gradient-sunset: linear-gradient(180deg, hsl(350, 60%, 92%) 0%, hsl(20, 40%, 95%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(340, 70%, 25%) 0%, hsl(340, 70%, 40%) 100%);
+    /* Modern romantic gradients */
+    --gradient-hero: linear-gradient(180deg, hsl(350, 80%, 92%) 0%, hsl(350, 60%, 95%) 50%, hsl(0, 0%, 100%) 100%);
+    --gradient-pink-fade: linear-gradient(180deg, hsl(350, 70%, 94%) 0%, hsl(0, 0%, 100%) 100%);
+    --gradient-coral-button: linear-gradient(135deg, hsl(350, 85%, 55%) 0%, hsl(15, 90%, 55%) 100%);
+    --gradient-testimonial: linear-gradient(180deg, hsl(350, 70%, 92%) 0%, hsl(350, 60%, 94%) 100%);
+    --gradient-footer: linear-gradient(180deg, hsl(350, 80%, 92%) 0%, hsl(350, 70%, 88%) 100%);
     
     /* Shadows */
-    --shadow-romantic: 0 10px 40px -10px hsl(340 70% 35% / 0.3);
-    --shadow-card: 0 4px 20px -5px hsl(340 70% 35% / 0.15);
-    --shadow-button: 0 4px 15px -3px hsl(340 70% 35% / 0.4);
+    --shadow-soft: 0 4px 20px -5px hsl(350 50% 50% / 0.15);
+    --shadow-card: 0 8px 30px -10px hsl(350 50% 40% / 0.12);
+    --shadow-button: 0 4px 15px -3px hsl(350 85% 55% / 0.35);
+    --shadow-elevated: 0 20px 40px -15px hsl(350 50% 40% / 0.2);
 
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 350 50% 15%;
-    --sidebar-primary: 340 70% 35%;
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 350 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 350 60% 92%;
-    --sidebar-accent-foreground: 340 70% 30%;
-    --sidebar-border: 350 30% 88%;
-    --sidebar-ring: 340 70% 45%;
+    --sidebar-accent: 350 70% 95%;
+    --sidebar-accent-foreground: 350 70% 40%;
+    --sidebar-border: 350 20% 90%;
+    --sidebar-ring: 350 85% 55%;
   }
 
   .dark {
-    --background: 350 30% 8%;
+    --background: 220 20% 8%;
     --foreground: 350 20% 95%;
 
-    --card: 350 30% 12%;
+    --card: 220 20% 12%;
     --card-foreground: 350 20% 95%;
 
-    --popover: 350 30% 12%;
+    --popover: 220 20% 12%;
     --popover-foreground: 350 20% 95%;
 
-    --primary: 340 60% 55%;
+    --primary: 350 75% 60%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 350 30% 20%;
     --secondary-foreground: 350 20% 90%;
 
-    --muted: 350 30% 18%;
-    --muted-foreground: 350 20% 65%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 15% 65%;
 
-    --accent: 20 50% 55%;
+    --accent: 15 70% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 350 30% 20%;
-    --input: 350 30% 20%;
-    --ring: 340 60% 55%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 350 75% 60%;
 
-    --sidebar-background: 350 30% 10%;
+    --sidebar-background: 220 20% 10%;
     --sidebar-foreground: 350 20% 95%;
-    --sidebar-primary: 340 60% 55%;
+    --sidebar-primary: 350 75% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 350 30% 18%;
+    --sidebar-accent: 220 20% 18%;
     --sidebar-accent-foreground: 350 20% 90%;
-    --sidebar-border: 350 30% 18%;
-    --sidebar-ring: 340 60% 55%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 350 75% 60%;
   }
 }
 
@@ -114,7 +117,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
   }
 
@@ -124,30 +127,43 @@
 }
 
 @layer components {
-  .btn-romantic {
-    @apply bg-primary text-primary-foreground px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105;
+  .btn-primary {
+    @apply bg-primary text-primary-foreground px-6 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105;
+    background: var(--gradient-coral-button);
     box-shadow: var(--shadow-button);
   }
 
-  .btn-romantic:hover {
-    box-shadow: 0 6px 20px -3px hsl(340 70% 35% / 0.5);
+  .btn-primary:hover {
+    box-shadow: 0 6px 25px -3px hsl(350 85% 55% / 0.45);
   }
 
-  .card-romantic {
-    @apply bg-card rounded-2xl p-6;
+  .btn-outline-dark {
+    @apply bg-foreground text-background px-6 py-3 rounded-full font-semibold transition-all duration-300 hover:opacity-90;
+  }
+
+  .card-elevated {
+    @apply bg-card rounded-2xl;
     box-shadow: var(--shadow-card);
   }
 
-  .gradient-romantic {
-    background: var(--gradient-romantic);
+  .section-pink {
+    background: var(--gradient-pink-fade);
   }
 
-  .gradient-hero {
+  .section-testimonial {
+    background: var(--gradient-testimonial);
+  }
+
+  .section-footer {
+    background: var(--gradient-footer);
+  }
+
+  .gradient-hero-bg {
     background: var(--gradient-hero);
   }
 
-  .text-gradient {
-    background: var(--gradient-romantic);
+  .text-gradient-primary {
+    background: var(--gradient-coral-button);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -159,6 +175,36 @@
 
   .sponsor-scroll {
     animation: scroll-left 20s linear infinite;
+  }
+
+  .icon-container {
+    @apply w-14 h-14 rounded-2xl flex items-center justify-center;
+    background: hsl(350 70% 95%);
+  }
+
+  .icon-container-primary {
+    @apply w-14 h-14 rounded-2xl flex items-center justify-center text-primary;
+    background: hsl(350 70% 95%);
+  }
+
+  .feature-card {
+    @apply bg-card rounded-xl p-6 text-center transition-all duration-300;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .feature-card:hover {
+    box-shadow: var(--shadow-card);
+    transform: translateY(-2px);
+  }
+
+  .testimonial-card {
+    @apply bg-card rounded-2xl p-6;
+    box-shadow: var(--shadow-card);
+  }
+
+  .notification-card {
+    @apply bg-card rounded-xl p-3 flex items-center gap-3;
+    box-shadow: var(--shadow-elevated);
   }
 }
 
@@ -203,4 +249,23 @@
 
 .animate-heartbeat {
   animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+/* Bokeh heart effect for hero */
+.bokeh-hearts {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bokeh-hearts::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 60%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, hsl(350 60% 80% / 0.4) 0%, transparent 70%);
+  transform: translateY(-50%);
 }
