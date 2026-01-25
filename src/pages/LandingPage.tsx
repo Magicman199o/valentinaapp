@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, ArrowRight, Users, Sparkles, Clock, HandHeart, Building2, Mail, Phone, User, Star, Gift, MessageCircle, Eye, Play, ChevronRight, Shield, Shuffle } from 'lucide-react';
+import { Heart, ArrowRight, Users, Sparkles, Clock, HandHeart, Building2, Mail, Phone, User, Star, MessageCircle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,27 +77,6 @@ const LandingPage = () => {
     },
   ];
 
-  const testimonials = [
-    {
-      name: 'Jessica M.',
-      role: 'Happy Match',
-      content: '"Used this for my coding community group. The website features are great so much stress. Everyone got something they didn\'t!"',
-      rating: 5,
-    },
-    {
-      name: 'David K.',
-      role: 'Tech Lead',
-      content: '"The matches are amazing! A very fun event. Both the anonymous messaging and Granat and thought so nicely together."',
-      rating: 5,
-    },
-    {
-      name: 'Emily R.',
-      role: 'Event Planner',
-      content: '"Smooth intuitive find matching flow! Exciting experience. The interface is absolutely great and super easy to use."',
-      rating: 5,
-    },
-  ];
-
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
       <FloatingHearts />
@@ -107,7 +86,6 @@ const LandingPage = () => {
         <Logo size="md" />
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
           <a href="#features" className="hover:text-foreground transition-colors">How it Works</a>
-          <a href="#testimonials" className="hover:text-foreground transition-colors">Gift Ideas</a>
           <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
         </div>
         <div className="flex items-center gap-3">
@@ -192,7 +170,7 @@ const LandingPage = () => {
               </h1>
               
               <p className="text-lg text-muted-foreground mb-8 max-w-lg mx-auto lg:mx-0">
-                Join thousands finding their perfect match through our unique matching experience.
+                Join thousands finding their perfect match through our unique valentine matching experience.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -205,10 +183,10 @@ const LandingPage = () => {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="btn-outline-dark text-base px-8 py-6 rounded-full"
+                  className="btn-outline-dark text-base px-8 py-6 rounded-full bg-secondary/50"
                   onClick={() => setShowSponsorForm(true)}
                 >
-                  <Play className="mr-2 w-4 h-4" />
+                  <HandHeart className="mr-2 w-4 h-4" />
                   Become a Sponsor
                 </Button>
               </div>
@@ -236,12 +214,12 @@ const LandingPage = () => {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Join <span className="font-semibold text-foreground">2,900+</span> happy cupids today
+                  Over <span className="font-semibold text-foreground">1000+</span> successful valentine matches
                 </p>
               </motion.div>
             </motion.div>
 
-            {/* Right side - Decorative cards */}
+            {/* Right side - Hero image with cards */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -249,10 +227,18 @@ const LandingPage = () => {
               className="relative hidden lg:block"
             >
               <div className="relative w-full aspect-square max-w-md mx-auto">
-                {/* Main gift image placeholder */}
-                <div className="absolute inset-8 rounded-3xl bg-gradient-to-br from-rose-100 to-pink-50 overflow-hidden shadow-2xl">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Gift className="w-32 h-32 text-rose-300" />
+                {/* Main hero image */}
+                <div className="absolute inset-8 rounded-3xl overflow-hidden shadow-2xl">
+                  <img 
+                    src={heroImage} 
+                    alt="Valentine hearts bokeh" 
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Matched badge */}
+                  <div className="absolute top-4 left-4">
+                    <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+                      MATCHED
+                    </span>
                   </div>
                 </div>
                 
@@ -295,7 +281,7 @@ const LandingPage = () => {
         <SponsorCarousel />
       </div>
 
-      {/* Features Section - "Spread Love in 4 Simple Steps" */}
+      {/* Features Section - "Why Choose Valentina" */}
       <section id="features" className="relative z-10 bg-background px-4 md:px-8 py-20">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -308,7 +294,7 @@ const LandingPage = () => {
               Why Choose <span className="text-gradient-primary">Valentina</span>?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Whether it's for your single friends, your office team, or a community group, we make organizing easy!
+              Whether it's for your single friends, your office team, or a community group, we make finding love easy!
             </p>
           </motion.div>
           
@@ -333,118 +319,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Everything You Need Section */}
-      <section className="relative z-10 section-pink px-4 md:px-8 py-20">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left - Image placeholder */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-rose-100 to-pink-50 overflow-hidden shadow-lg flex items-center justify-center">
-                <Gift className="w-24 h-24 text-rose-300" />
-              </div>
-            </motion.div>
-
-            {/* Right - Content */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6 text-foreground">
-                Everything you need for a perfect match
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                Forget spreadsheets and awkward situations from a list. We handle the logistics so you can focus on the romance (or friendship).
-              </p>
-
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="icon-container-primary flex-shrink-0">
-                    <Gift className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-1">Smart Wishlists</h4>
-                    <p className="text-sm text-muted-foreground">Participants can add links to gifts they actually want, removing all the guesswork.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="icon-container-primary flex-shrink-0">
-                    <MessageCircle className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-1">Anonymous Messaging</h4>
-                    <p className="text-sm text-muted-foreground">Ask your match questions about their size, preferences without revealing who you are.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="icon-container-primary flex-shrink-0">
-                    <Shield className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-1">Exclusion Rules</h4>
-                    <p className="text-sm text-muted-foreground">Prevent couples from matching with each other or ensure people don't match.</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="relative z-10 section-testimonial px-4 md:px-8 py-20">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground">
-              Love Letters from Users
-            </h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={testimonial.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="testimonial-card"
-              >
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-foreground text-sm mb-6 leading-relaxed">
-                  {testimonial.content}
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-300 to-pink-400 flex items-center justify-center text-white text-sm font-medium">
-                    {testimonial.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">{testimonial.name}</p>
-                    <p className="text-xs text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="relative z-10 bg-background px-4 md:px-8 py-20">
         <motion.div
@@ -460,12 +334,7 @@ const LandingPage = () => {
             Sign up today and let the magic of love guide you to your soulmate.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-            <Input 
-              type="email" 
-              placeholder="Enter your email" 
-              className="rounded-full px-6 h-12 border-border bg-card"
-            />
+          <div className="flex justify-center">
             <Link to="/auth?mode=signup">
               <Button className="btn-primary h-12 px-8 rounded-full whitespace-nowrap">
                 Get Started
@@ -474,7 +343,7 @@ const LandingPage = () => {
           </div>
           
           <p className="text-xs text-muted-foreground mt-4">
-            No credit card required. Free for groups up to 100
+            No credit card required. Free for everyone
           </p>
         </motion.div>
       </section>
@@ -486,7 +355,7 @@ const LandingPage = () => {
             <div>
               <Logo size="sm" />
               <p className="text-sm text-muted-foreground mt-4">
-                Making gift exchange better. The world's favorite Secret Gift exchange app ❤️
+                Making valentine matchmaking better. The world's favorite love matching app ❤️
               </p>
             </div>
             <div>
@@ -500,8 +369,8 @@ const LandingPage = () => {
             <div>
               <h4 className="font-semibold text-foreground mb-4">Resources</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Gift Guide</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Party Ideas</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors">Love Guide</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors">Date Ideas</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
               </ul>
             </div>
@@ -520,7 +389,7 @@ const LandingPage = () => {
               © {new Date().getFullYear()} Valentina. Made with <Heart className="inline w-4 h-4 text-primary fill-primary" /> for love seekers.
             </p>
             <p className="text-sm text-muted-foreground">
-              Made with <Heart className="inline w-4 h-4 text-primary fill-primary" /> for the hopeless everywhere
+              Made with <Heart className="inline w-4 h-4 text-primary fill-primary" /> for the hopeless romantics everywhere
             </p>
           </div>
         </div>
