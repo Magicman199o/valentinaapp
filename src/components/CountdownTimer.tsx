@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Clock } from 'lucide-react';
 
@@ -6,6 +6,7 @@ interface CountdownTimerProps {
   targetDate: Date;
   onComplete?: () => void;
   gender?: 'male' | 'female';
+  name?: string;
 }
 
 interface TimeLeft {
@@ -15,7 +16,7 @@ interface TimeLeft {
   seconds: number;
 }
 
-const CountdownTimer = ({ targetDate, onComplete, gender = 'male' }: CountdownTimerProps) => {
+const CountdownTimer = ({ targetDate, onComplete, gender = 'male', name }: CountdownTimerProps) => {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isComplete, setIsComplete] = useState(false);
 
@@ -43,26 +44,35 @@ const CountdownTimer = ({ targetDate, onComplete, gender = 'male' }: CountdownTi
     return () => clearInterval(timer);
   }, [targetDate, onComplete]);
 
-  const TimeUnit = ({ value, label }: { value: number; label: string }) => (
-    <motion.div
-      className="flex flex-col items-center"
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <motion.div
-        key={value}
-        initial={{ scale: 1.2, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="w-14 h-14 md:w-16 md:h-16 rounded-xl gradient-romantic flex items-center justify-center shadow-lg"
-      >
-        <span className="text-xl md:text-2xl font-bold text-primary-foreground font-serif">
-          {value.toString().padStart(2, '0')}
-        </span>
+  const TimeUnit = ({ value, label }: { value: number; label: string }) => {
+    const prevRef = useRef<number>(value);
+    const [animating, setAnimating] = useState(false);
+
+    useEffect(() => {
+      if (prevRef.current !== value) {
+        setAnimating(true);
+        const t = setTimeout(() => setAnimating(false), 400);
+        prevRef.current = value;
+        return () => clearTimeout(t);
+      }
+    }, [value]);
+
+    return (
+      <motion.div className="flex flex-col items-center">
+        <motion.div
+          initial={{ scale: 1, opacity: 1 }}
+          animate={animating ? { scale: [1, 1.12, 1] } : { scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="w-14 h-14 md:w-16 md:h-16 rounded-lg flex items-center justify-center shadow-md bg-transparent"
+        >
+          <span className="text-xl md:text-2xl font-bold text-gray-900 font-serif">
+            {value.toString().padStart(2, '0')}
+          </span>
+        </motion.div>
+        <span className="mt-1 text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
       </motion.div>
-      <span className="mt-1 text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
-    </motion.div>
-  );
+    );
+  };
 
   if (isComplete) {
     return (
@@ -90,9 +100,9 @@ const CountdownTimer = ({ targetDate, onComplete, gender = 'male' }: CountdownTi
         <Clock className="w-5 h-5" />
         <span className="font-medium">Time until your match</span>
       </div>
-      
+
       {/* Animated Illustration */}
-      <div className="flex justify-center mb-4">
+      <div className="flex justify-center mb-4 relative">
         {gender === 'male' ? (
           <motion.div
             animate={{ 
@@ -256,17 +266,55 @@ const CountdownTimer = ({ targetDate, onComplete, gender = 'male' }: CountdownTi
             </div>
           </motion.div>
         )}
-      </div>
+        {/* Pink card overlay matching Figma */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 bottom-6 w-[86%] max-w-xl">
+          <div className="rounded-3xl shadow-xl overflow-hidden bg-rose-400/95 p-6 md:p-10 text-center text-white relative">
+            {/* Floating hearts background */}
+            <motion.div
+              className="absolute top-4 left-6 text-rose-300"
+              animate={{ y: [0, -20], opacity: [0.3, 0.8, 0.3] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              <Heart className="w-6 h-6 fill-current" />
+            </motion.div>
+            <motion.div
+              className="absolute top-12 right-8 text-rose-300"
+              animate={{ y: [0, -15], opacity: [0.4, 0.9, 0.4] }}
+              transition={{ duration: 3.5, repeat: Infinity, delay: 0.5 }}
+            >
+              <Heart className="w-5 h-5 fill-current" />
+            </motion.div>
+            <motion.div
+              className="absolute bottom-8 left-12 text-rose-300"
+              animate={{ y: [0, -18], opacity: [0.3, 0.7, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+            >
+              <Heart className="w-4 h-4 fill-current" />
+            </motion.div>
+            <motion.div
+              className="absolute bottom-12 right-6 text-rose-300"
+              animate={{ y: [0, -20], opacity: [0.4, 0.8, 0.4] }}
+              transition={{ duration: 3.2, repeat: Infinity, delay: 0.8 }}
+            >
+              <Heart className="w-5 h-5 fill-current" />
+            </motion.div>
 
-      {/* Stylish Countdown */}
-      <div className="flex justify-center gap-2 md:gap-4">
-        <TimeUnit value={timeLeft.days} label="Days" />
-        <div className="flex items-center text-2xl text-primary font-bold pt-2">:</div>
-        <TimeUnit value={timeLeft.hours} label="Hours" />
-        <div className="flex items-center text-2xl text-primary font-bold pt-2">:</div>
-        <TimeUnit value={timeLeft.minutes} label="Mins" />
-        <div className="flex items-center text-2xl text-primary font-bold pt-2">:</div>
-        <TimeUnit value={timeLeft.seconds} label="Secs" />
+            <h2 className="text-3xl md:text-4xl font-serif italic">Awaiting a match</h2>
+            <p className="mt-2 text-sm md:text-base opacity-95">{name ?? 'John Doe'}, your match will be revealed in</p>
+
+            <div className="mt-6 bg-[#f7f1e6] rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-inner">
+              <div className="flex items-center gap-3 justify-center w-full">
+                <TimeUnit value={timeLeft.days} label="Days" />
+                <div className="text-lg md:text-2xl font-bold text-[#c87a6f]">:</div>
+                <TimeUnit value={timeLeft.hours} label="Hours" />
+                <div className="text-lg md:text-2xl font-bold text-[#c87a6f]">:</div>
+                <TimeUnit value={timeLeft.minutes} label="Min" />
+                <div className="text-lg md:text-2xl font-bold text-[#c87a6f]">:</div>
+                <TimeUnit value={timeLeft.seconds} label="Sec" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
