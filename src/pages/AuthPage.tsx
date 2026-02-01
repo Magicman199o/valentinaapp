@@ -20,7 +20,7 @@ import Logo from "@/components/Logo";
 import FloatingHearts from "@/components/FloatingHearts";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Register } from "@/components/MobileAuthPage";
+import { MobileAuthPage } from "@/components/MobileAuthPage";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -341,7 +341,7 @@ const AuthPage = () => {
         </motion.div>
       </div>
       <main className="flex sm:hidden">
-        <Register
+        <MobileAuthPage
           mode={mode}
           setMode={setMode}
           formData={formData}

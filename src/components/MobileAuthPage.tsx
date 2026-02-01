@@ -41,7 +41,7 @@ interface AuthProps {
   loading: boolean;
   handleSubmit?: (e: FormEvent) => void;
 }
-const Register = ({
+const MobileAuthPage = ({
   mode,
   formData,
   setFormData,
@@ -309,5 +309,5 @@ const Register = ({
   );
 };
 
-export { Register };
+export { MobileAuthPage };
 //
