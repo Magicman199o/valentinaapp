@@ -1,15 +1,18 @@
 "use client";
-import React, { useState, FormEvent } from "react";
-// import { Logo_White } from "@/assets/index";
+import React, { useState, FormEvent, Dispatch, SetStateAction } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-// import { useRegisterMutation } from "@/provider/store/user-api";
-// import { useRouter } from "next/navigation";
-// import ClipLoader from "react-spinners/ClipLoader";
-// import toast, { Toaster } from "react-hot-toast";
-// import Link from "next/link";
-// import Image from "next/image";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Heart,
+  Lock,
+  Mail,
+  Phone,
+  User,
+} from "lucide-react";
+import { motion } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -18,152 +21,290 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AuthImage from "@/assets/valentina-bg.png";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { cn } from "@/lib/utils";
 
-const Register = () => {
-  //   const router = useRouter();
-  //   const [registerUser, { isLoading }] = useRegisterMutation();
-  const [userDetails, setUserDetails] = useState({
-    email: "",
-    phoneNumber: "",
-    gender: "",
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setUserDetails((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  const handleGenderChange = (value: string) => {
-    setUserDetails((prevData) => ({
-      ...prevData,
-      gender: value.toUpperCase(), // Ensuring it's in uppercase
-    }));
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // if (userDetails?.email && userDetails?.phoneNumber) {
-    //   try {
-    //     // const registerResponse = await registerUser(userDetails).unwrap();
-    //     console.log("Response:", registerResponse);
-    //     if (typeof window !== "undefined") {
-    //       localStorage.setItem("user", JSON.stringify(registerResponse?.data));
-    //     }
-    //     toast.success(registerResponse?.message);
-    //     router.replace("/payment");
-    //   } catch (error) {
-    //     console.log("Error:", error);
-    //   }
-    // }
-    // console.log("")
-  };
-
+type UserDetails = {
+  name: string;
+  email: string;
+  password: string;
+  whatsapp_phone: string;
+  gender: "male" | "female" | "";
+};
+interface AuthProps {
+  mode: string;
+  formData: UserDetails;
+  setFormData: Dispatch<SetStateAction<UserDetails>>;
+  setMode?: Dispatch<SetStateAction<string>>;
+  showPassword: boolean;
+  setShowPassword: Dispatch<SetStateAction<boolean>>;
+  loading: boolean;
+  handleSubmit?: (e: FormEvent) => void;
+}
+const Register = ({
+  mode,
+  formData,
+  setFormData,
+  setMode,
+  showPassword,
+  setShowPassword,
+  loading,
+  handleSubmit,
+}: AuthProps) => {
   return (
     <main className="h-screen overflow-hidden">
       <section className="fixed bg-[url('/images/onboarding.svg')] h-screen bg-no-repeat bg-cover w-full inset-0 overflow-y-hidden no-scrollbar">
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative inset-0   w-full flex flex-col gap-2 items-center justify-center text-center">
           <div className="m-auto w-full">
-            {/* <Logo_White /> */}
             <img
               src={AuthImage}
               className="w-full h-full"
               alt="Valentina-logo"
             />
           </div>
-          {/* <p className="text-center text-[16px] font-[600] text-white">
-            {" "}
-            Find your best match for valentines
-          </p> */}
         </div>
       </section>
-      <section className="bg-white bg-gradient-to-r from-white via-[#FCE1E299] to-white rounded-t-[16px] h-[60dvh] overflow-y-auto no-scrollbar fixed bottom-0  w-full">
-        <form
-          className="px-6 py-8 flex flex-col  gap-8"
-          onSubmit={handleSubmit}
-        >
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-white bg-gradient-to-r from-white via-[#FCE1E299] to-white rounded-t-[16px] h-[60dvh] overflow-y-auto no-scrollbar fixed bottom-0  w-full"
+      >
+        <div className="px-6 py-8 flex flex-col  gap-8">
           <div className="flex flex-col gap-2">
             <h1 className="text-[24px] font-[700] text-[700]">
-              Find your VAL the easy way 🎁
+              {mode === "login" && "Welcome back to love"}
+              {mode === "signup" && "Begin your journey to love"}
+              {mode === "forgot" && "Reset your password"}
             </h1>
             <p className="text-[16px] font-[600] text-[#616161]">
               Discover your perfect match this Valentine's Day and make it
               unforgettable!
             </p>
           </div>
+          <form onSubmit={handleSubmit}>
+            {mode === "signup" && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-col gap-5"
+                >
+                  <div className="flex flex-col gap-3">
+                    <label
+                      className="text-[16px] font-[600] text-[#333333]"
+                      htmlFor="name"
+                    >
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Enter your name"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        className="pl-10 py-6 rounded-[20px]"
+                      />
+                    </div>
+                  </div>
 
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-3">
-              <label className="text-[16px] font-[600] text-[#333333]">
-                Email{" "}
-              </label>
-              <Input
-                placeholder=" Type email address"
-                name="email"
-                type="email"
-                value={userDetails.email}
-                onChange={handleChange}
-                required
-                className="border border-[#F2F3F6] rounded-[16px] h-[56px] bg-white p-3 text-[16px] font-[500]"
-              />
+                  <div className="flex flex-col gap-3">
+                    <label
+                      className="text-[16px] font-[600] text-[#333333]"
+                      htmlFor="phone"
+                    >
+                      WhatsApp Number
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+1234567890"
+                        value={formData.whatsapp_phone}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            whatsapp_phone: e.target.value,
+                          })
+                        }
+                        className="pl-10 py-6 rounded-[20px]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <label className="text-[16px] font-[600] text-[#333333]">
+                      Gender{" "}
+                    </label>
+                    <RadioGroup
+                      value={formData.gender}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          gender: value as "male" | "female",
+                        })
+                      }
+                      className="flex gap-4 "
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="male" id="male" />
+                        <label htmlFor="male" className="cursor-pointer">
+                          Male
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="female" id="female" />
+                        <label htmlFor="female" className="cursor-pointer">
+                          Female
+                        </label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </motion.div>
+              </>
+            )}
+
+            <div
+              className={cn(
+                "flex flex-col gap-5 ",
+                mode === "login" ? "mt-0" : "my-5"
+              )}
+            >
+              <div className="flex flex-col gap-3 ">
+                <label
+                  className="text-[16px] font-[600] text-[#333333]"
+                  htmlFor="email"
+                >
+                  Email{" "}
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="pl-10 py-6 rounded-[20px]"
+                  />
+                </div>
+              </div>
+
+              {mode !== "forgot" && (
+                <div className="flex flex-col gap-3 ">
+                  <label
+                    htmlFor="password"
+                    className="text-[16px] font-[600] text-[#333333]"
+                  >
+                    Password
+                  </label>
+                  <div className="relative ">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="pl-10 pr-10 py-6 rounded-[20px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col gap-3">
-              <label className="text-[16px] font-[600] text-[#333333]">
-                Phone Number{" "}
-              </label>
-              <Input
-                placeholder=" Enter your Phone Number"
-                name="phoneNumber"
-                type="text"
-                value={userDetails.phoneNumber}
-                onChange={handleChange}
-                required
-                className="border border-[#F2F3F6] rounded-[16px] h-[56px] bg-white p-3 text-[16px] font-[500]"
-              />
-            </div>
-            <div className="flex flex-col gap-3">
-              <label className="text-[16px] font-[600] text-[#333333]">
-                Gender{" "}
-              </label>
-              <Select onValueChange={handleGenderChange}>
-                <SelectTrigger className="w-full border border-[#F2F3F6] rounded-[16px] h-[56px] bg-white p-3 text-[16px] font-[500]">
-                  <SelectValue placeholder="Select your Gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="M">Male</SelectItem>
-                  <SelectItem value="F">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
+            {mode === "login" && (
+              <button
+                type="button"
+                onClick={() => setMode("forgot")}
+                className="text-sm text-primary hover:underline my-2"
+              >
+                Forgot password?
+              </button>
+            )}
 
             <div className="mt-2 flex flex-col gap-2">
-              <Button className="bg-[#FC5119] rounded-[16px] py-4 px-6 h-[56px]  w-full">
-                {/* {isLoading ? (
-                  <ClipLoader color="#ffffff" />
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full btn-romantic"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 animate-pulse" />
+                    {mode === "login"
+                      ? "Logging in..."
+                      : mode === "signup"
+                      ? "Creating account..."
+                      : "Sending..."}
+                  </span>
                 ) : (
-                  <div className="text-white flex items-center gap-1 text-[16px] font-[800]">
-                    <span>Signup</span>
-                    <ArrowRight strokeWidth={3} className="w-[18px] h-[15px]" />
-                  </div>
-                )} */}
-                <div className="text-white flex items-center gap-1 text-[16px] font-[800]">
-                  <span>Signup</span>
-                  <ArrowRight strokeWidth={3} className="w-[18px] h-[15px]" />
-                </div>
+                  <span className="flex items-center gap-2">
+                    {mode === "login" && "Login"}
+                    {mode === "signup" && "Register Now"}
+                    {mode === "forgot" && "Send Reset Link"}
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                )}
               </Button>
-              <div className="text-center">
-                Already have an account?{" "}
-                <a className="underline text-[#FC5119]" href="/login">
-                  Login
-                </a>
-              </div>
             </div>
-          </div>
-        </form>
-      </section>
+            <div className=" text-center text-sm mt-5">
+              {mode === "login" && (
+                <p>
+                  Don't have an account?{" "}
+                  <button
+                    onClick={() => setMode("signup")}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    Register Now
+                  </button>
+                </p>
+              )}
+              {mode === "signup" && (
+                <p>
+                  Already have an account?{" "}
+                  <button
+                    onClick={() => setMode("login")}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    Login
+                  </button>
+                </p>
+              )}
+              {mode === "forgot" && (
+                <button
+                  onClick={() => setMode("login")}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Back to Login
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      </motion.section>
     </main>
   );
 };

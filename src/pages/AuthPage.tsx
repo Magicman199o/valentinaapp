@@ -341,7 +341,16 @@ const AuthPage = () => {
         </motion.div>
       </div>
       <main className="flex sm:hidden">
-        <Register />
+        <Register
+          mode={mode}
+          setMode={setMode}
+          formData={formData}
+          setFormData={setFormData}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          loading={loading}
+          handleSubmit={handleSubmit}
+        />
       </main>
     </>
   );
