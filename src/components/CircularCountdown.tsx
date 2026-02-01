@@ -152,8 +152,8 @@ const CircularCountdown = ({ targetDate, onComplete }: CircularCountdownProps) =
 
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-muted-foreground text-sm mb-1">Time left</span>
-          <span className="text-2xl md:text-3xl font-bold text-foreground">
+          <span className="text-muted-foreground text-sm mb-1 font-oswald uppercase tracking-wide">Time left</span>
+          <span className="text-2xl md:text-3xl font-oswald font-bold text-foreground uppercase tracking-tight">
             {formatTime()}
           </span>
         </div>
