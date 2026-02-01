@@ -342,9 +342,6 @@ const LandingPage = () => {
             </Link>
           </div>
           
-          <p className="text-xs text-muted-foreground mt-4">
-            No credit card required. Free for everyone
-          </p>
         </motion.div>
       </section>
 
