@@ -65,11 +65,11 @@ const CountdownTimer = ({ targetDate, onComplete, gender = 'male', name }: Count
           transition={{ duration: 0.4 }}
           className="w-14 h-14 md:w-16 md:h-16 rounded-lg flex items-center justify-center shadow-md bg-transparent"
         >
-          <span className="text-xl md:text-2xl font-bold text-gray-900 font-serif">
+          <span className="text-xl md:text-2xl font-oswald font-bold text-gray-900 uppercase tracking-tight">
             {value.toString().padStart(2, '0')}
           </span>
         </motion.div>
-        <span className="mt-1 text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
+        <span className="mt-1 text-xs font-oswald font-bold text-muted-foreground uppercase tracking-wider">{label}</span>
       </motion.div>
     );
   };
@@ -299,17 +299,17 @@ const CountdownTimer = ({ targetDate, onComplete, gender = 'male', name }: Count
               <Heart className="w-5 h-5 fill-current" />
             </motion.div>
 
-            <h2 className="text-3xl md:text-4xl font-serif italic">Awaiting a match</h2>
-            <p className="mt-2 text-sm md:text-base opacity-95">{name ?? 'John Doe'}, your match will be revealed in</p>
+            <h2 className="text-3xl md:text-4xl font-oswald font-bold uppercase tracking-wide">Awaiting a match</h2>
+            <p className="mt-2 text-sm md:text-base font-oswald font-bold opacity-95 uppercase tracking-wide">{name ?? 'John Doe'}, your match will be revealed in</p>
 
             <div className="mt-6 bg-[#f7f1e6] rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-inner">
               <div className="flex items-center gap-3 justify-center w-full">
                 <TimeUnit value={timeLeft.days} label="Days" />
-                <div className="text-lg md:text-2xl font-bold text-[#c87a6f]">:</div>
+                <div className="text-lg md:text-2xl font-oswald font-bold text-[#c87a6f]">:</div>
                 <TimeUnit value={timeLeft.hours} label="Hours" />
-                <div className="text-lg md:text-2xl font-bold text-[#c87a6f]">:</div>
+                <div className="text-lg md:text-2xl font-oswald font-bold text-[#c87a6f]">:</div>
                 <TimeUnit value={timeLeft.minutes} label="Min" />
-                <div className="text-lg md:text-2xl font-bold text-[#c87a6f]">:</div>
+                <div className="text-lg md:text-2xl font-oswald font-bold text-[#c87a6f]">:</div>
                 <TimeUnit value={timeLeft.seconds} label="Sec" />
               </div>
             </div>
