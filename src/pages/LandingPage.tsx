@@ -176,7 +176,7 @@ const LandingPage = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link to="/auth?mode=signup">
                   <Button size="lg" className="btn-primary text-base px-8 py-6 rounded-full">
-                    Get Started
+                    GET ME A VAL
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
@@ -337,7 +337,7 @@ const LandingPage = () => {
           <div className="flex justify-center">
             <Link to="/auth?mode=signup">
               <Button className="btn-primary h-12 px-8 rounded-full whitespace-nowrap">
-                Get Started
+                GET ME A VAL
               </Button>
             </Link>
           </div>
