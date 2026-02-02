@@ -302,8 +302,8 @@ const CountdownTimer = ({ targetDate, onComplete, gender = 'male', name }: Count
             <h2 className="text-3xl md:text-4xl font-oswald font-bold uppercase tracking-wide">Awaiting a match</h2>
             <p className="mt-2 text-sm md:text-base opacity-95"><span className="font-oswald font-bold uppercase tracking-wide">{name ?? 'John Doe'}</span>, your match will be revealed in</p>
 
-            <div className="mt-6 bg-[#f7f1e6] rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-inner">
-              <div className="flex items-center gap-3 justify-center w-full">
+            <div className="mt-6 bg-[#f7f1e6] rounded-xl px-6 py-5 flex items-center justify-center shadow-inner">
+              <div className="flex items-center gap-2 md:gap-4 justify-center w-full flex-wrap">
                 <TimeUnit value={timeLeft.days} label="Days" />
                 <div className="text-lg md:text-2xl font-oswald font-bold text-[#c87a6f]">:</div>
                 <TimeUnit value={timeLeft.hours} label="Hours" />
