@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Mail, Phone, Gift, Sparkles, User } from 'lucide-react';
+import { Heart, Mail, Phone, Gift, Sparkles, User, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface MatchProfile {
   user_id: string;
@@ -21,13 +24,16 @@ interface MatchRevealCardProps {
 }
 
 const MatchRevealCard = ({ profile, isInstantMatch }: MatchRevealCardProps) => {
+  const [showFullProfile, setShowFullProfile] = useState(false);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, type: "spring" }}
-      className="space-y-6"
-    >
+    <>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, type: "spring" }}
+        className="space-y-6"
+      >
       {/* Celebration Header */}
       <div className="text-center">
         <motion.div
@@ -127,6 +133,20 @@ const MatchRevealCard = ({ profile, isInstantMatch }: MatchRevealCardProps) => {
         )}
       </div>
 
+      {/* View Full Profile Button - only if profile is visible */}
+      {profile.show_profile_to_match && (
+        <div className="text-center">
+          <Button 
+            onClick={() => setShowFullProfile(true)}
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            View Full Profile
+          </Button>
+        </div>
+      )}
+
       {/* Romantic Messages */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -155,6 +175,102 @@ const MatchRevealCard = ({ profile, isInstantMatch }: MatchRevealCardProps) => {
         </motion.div>
       </motion.div>
     </motion.div>
+
+    {/* Full Profile Modal */}
+    <Dialog open={showFullProfile} onOpenChange={setShowFullProfile}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-center font-serif text-xl">
+            {profile.name}'s Profile
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6 pt-4">
+          {/* Profile Picture */}
+          <div className="flex justify-center">
+            <div className="w-32 h-32 rounded-full overflow-hidden bg-secondary border-4 border-primary shadow-lg">
+              {profile.profile_picture_url ? (
+                <img
+                  src={profile.profile_picture_url}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                  <User className="w-16 h-16 text-primary" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Basic Info */}
+          <div className="text-center">
+            <h3 className="text-xl font-serif font-bold">{profile.name}</h3>
+            <p className="text-muted-foreground capitalize">
+              {profile.relationship_status || 'Ready for love'}
+            </p>
+          </div>
+
+          {/* About */}
+          {profile.about && (
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">About</h4>
+              <p className="text-sm bg-secondary/50 rounded-lg p-3">{profile.about}</p>
+            </div>
+          )}
+
+          {/* Interests */}
+          {profile.interests && profile.interests.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Interests</h4>
+              <div className="flex flex-wrap gap-2">
+                {profile.interests.map((interest) => (
+                  <span
+                    key={interest}
+                    className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                  >
+                    {interest}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Wishlist */}
+          {profile.wishlist && (
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                <Gift className="w-4 h-4" />
+                Wishlist
+              </h4>
+              <p className="text-sm bg-secondary/50 rounded-lg p-3">{profile.wishlist}</p>
+            </div>
+          )}
+
+          {/* Contact Info */}
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Contact</h4>
+            <div className="space-y-2">
+              {profile.email && (
+                <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                  <Mail className="w-5 h-5 text-primary" />
+                  <a href={`mailto:${profile.email}`} className="text-sm hover:text-primary">
+                    {profile.email}
+                  </a>
+                </div>
+              )}
+              <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                <Phone className="w-5 h-5 text-primary" />
+                <a href={`https://wa.me/${profile.whatsapp_phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-sm hover:text-primary">
+                  {profile.whatsapp_phone}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
