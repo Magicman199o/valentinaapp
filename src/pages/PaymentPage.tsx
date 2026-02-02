@@ -32,6 +32,7 @@ const PaymentPage = () => {
     if (reference || trxref) {
       verifyPayment(reference || trxref!);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, reference, trxref]);
 
   const fetchProfile = async () => {
@@ -71,7 +72,7 @@ const PaymentPage = () => {
       } else {
         toast.error('Payment could not be verified. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Payment verification error:', err);
       toast.error('Payment verification failed. Please contact support.');
     }
@@ -106,7 +107,7 @@ const PaymentPage = () => {
       } else {
         toast.error('Failed to initialize payment. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Payment init error:', err);
       toast.error('Failed to start payment. Please try again.');
     }
