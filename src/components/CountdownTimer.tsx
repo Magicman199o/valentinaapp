@@ -63,9 +63,9 @@ const CountdownTimer = ({ targetDate, onComplete, gender = 'male', name }: Count
           initial={{ scale: 1, opacity: 1 }}
           animate={animating ? { scale: [1, 1.12, 1] } : { scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="w-14 h-14 md:w-16 md:h-16 rounded-lg flex items-center justify-center shadow-md bg-transparent"
+          className="w-16 h-16 md:w-20 md:h-20 rounded-lg flex items-center justify-center shadow-md bg-transparent"
         >
-          <span className="text-xl md:text-2xl font-oswald font-bold text-gray-900 uppercase tracking-tight">
+          <span className="text-3xl md:text-4xl font-oswald font-bold text-red-600 uppercase tracking-tight">
             {value.toString().padStart(2, '0')}
           </span>
         </motion.div>
@@ -300,7 +300,7 @@ const CountdownTimer = ({ targetDate, onComplete, gender = 'male', name }: Count
             </motion.div>
 
             <h2 className="text-3xl md:text-4xl font-oswald font-bold uppercase tracking-wide">Awaiting a match</h2>
-            <p className="mt-2 text-sm md:text-base font-oswald font-bold opacity-95 uppercase tracking-wide">{name ?? 'John Doe'}, your match will be revealed in</p>
+            <p className="mt-2 text-sm md:text-base opacity-95"><span className="font-oswald font-bold uppercase tracking-wide">{name ?? 'John Doe'}</span>, your match will be revealed in</p>
 
             <div className="mt-6 bg-[#f7f1e6] rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-inner">
               <div className="flex items-center gap-3 justify-center w-full">

@@ -189,6 +189,24 @@ const handler = async (req: Request): Promise<Response> => {
         result = { success: true };
         break;
 
+      case "deleteUsers":
+        const { userIds } = params;
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+          throw new Error("No user IDs provided");
+        }
+        
+        // Delete users from auth (this will cascade to profiles via trigger)
+        for (const userId of userIds) {
+          const { error: delUserError } = await supabase.auth.admin.deleteUser(userId);
+          if (delUserError) {
+            console.error(`Failed to delete user ${userId}:`, delUserError);
+            throw new Error(`Failed to delete user: ${delUserError.message}`);
+          }
+        }
+        
+        result = { success: true, deletedCount: userIds.length };
+        break;
+
       default:
         throw new Error("Invalid action");
     }
