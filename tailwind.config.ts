@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
+        oswald: ['Oswald', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

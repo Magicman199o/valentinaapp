@@ -176,7 +176,7 @@ const LandingPage = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link to="/auth?mode=signup">
                   <Button size="lg" className="btn-primary text-base px-8 py-6 rounded-full">
-                    Get Started
+                    GET ME A VAL
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
@@ -337,61 +337,21 @@ const LandingPage = () => {
           <div className="flex justify-center">
             <Link to="/auth?mode=signup">
               <Button className="btn-primary h-12 px-8 rounded-full whitespace-nowrap">
-                Get Started
+                GET ME A VAL
               </Button>
             </Link>
           </div>
           
-          <p className="text-xs text-muted-foreground mt-4">
-            No credit card required. Free for everyone
-          </p>
         </motion.div>
       </section>
 
       {/* Footer */}
       <footer className="relative z-10 section-footer py-12">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <Logo size="sm" />
-              <p className="text-sm text-muted-foreground mt-4">
-                Making valentine matchmaking better. The world's favorite love matching app ❤️
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Platform</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">How it Works</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Sponsors</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">FAQ</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Resources</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Love Guide</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Date Ideas</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Contact Us</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-muted-foreground text-sm">
-              © {new Date().getFullYear()} Valentina. Made with <Heart className="inline w-4 h-4 text-primary fill-primary" /> for love seekers.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Made with <Heart className="inline w-4 h-4 text-primary fill-primary" /> for the hopeless romantics everywhere
-            </p>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
+          <Logo size="sm" />
+          <p className="text-sm text-muted-foreground mt-4">
+            Making valentine matchmaking better. Your favorite love matching app ❤️
+          </p>
         </div>
       </footer>
 
