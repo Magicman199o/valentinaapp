@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Logo from '@/components/Logo';
 import ViewProfileModal from '@/components/ViewProfileModal';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
 const ADMIN_SESSION_KEY = 'valentina_admin_authenticated';
@@ -56,6 +57,10 @@ const AdminPage = () => {
   const [newVIPUser, setNewVIPUser] = useState('');
   const [vipMatchWith, setVipMatchWith] = useState('');
   const [creatingVIP, setCreatingVIP] = useState(false);
+
+  // User deletion state
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [deletingUsers, setDeletingUsers] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -297,6 +302,62 @@ const AdminPage = () => {
     }
   };
 
+  // Delete single user
+  const deleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+    setDeletingUsers(true);
+    try {
+      await callAdminAPI('deleteUsers', { userIds: [userId] });
+      toast.success('User deleted successfully');
+      setSelectedUsers([]);
+      fetchAllData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete user');
+    }
+    setDeletingUsers(false);
+  };
+
+  // Delete multiple users
+  const deleteSelectedUsers = async () => {
+    if (selectedUsers.length === 0) {
+      toast.error('No users selected');
+      return;
+    }
+    if (!confirm(`Are you sure you want to delete ${selectedUsers.length} user(s)? This action cannot be undone.`)) {
+      return;
+    }
+    setDeletingUsers(true);
+    try {
+      await callAdminAPI('deleteUsers', { userIds: selectedUsers });
+      toast.success(`${selectedUsers.length} user(s) deleted successfully`);
+      setSelectedUsers([]);
+      fetchAllData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete users');
+    }
+    setDeletingUsers(false);
+  };
+
+  // Toggle user selection
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  // Toggle all users selection
+  const toggleAllUsers = () => {
+    if (selectedUsers.length === users.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(users.map(u => u.user_id));
+    }
+  };
+
   const maleUsers = users.filter(u => u.gender === 'male');
   const femaleUsers = users.filter(u => u.gender === 'female');
   const oppositeGenderOptions = newVIPUser ? getOppositeGenderUsers(newVIPUser) : [];
@@ -348,26 +409,77 @@ const AdminPage = () => {
             </TabsList>
 
             <TabsContent value="users">
-              <div className="card-romantic overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b"><th className="p-2 text-left">Name</th><th className="p-2">Email</th><th className="p-2">Phone</th><th className="p-2">Gender</th><th className="p-2">Joined</th><th className="p-2">Actions</th></tr></thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id} className="border-b hover:bg-secondary/50">
-                        <td className="p-2 font-medium">{u.name}</td>
-                        <td className="p-2">{u.email}</td>
-                        <td className="p-2">{u.whatsapp_phone}</td>
-                        <td className="p-2 capitalize">{u.gender}</td>
-                        <td className="p-2">{new Date(u.created_at).toLocaleDateString()}</td>
-                        <td className="p-2">
-                          <Button size="sm" variant="ghost" onClick={() => { setSelectedProfile(u); setShowProfileModal(true); }}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </td>
+              <div className="card-romantic space-y-4">
+                {/* Bulk actions */}
+                {selectedUsers.length > 0 && (
+                  <div className="flex items-center gap-4 p-3 bg-destructive/10 rounded-lg">
+                    <span className="text-sm font-medium">{selectedUsers.length} user(s) selected</span>
+                    <Button 
+                      size="sm" 
+                      variant="destructive" 
+                      onClick={deleteSelectedUsers}
+                      disabled={deletingUsers}
+                    >
+                      {deletingUsers ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                      Delete Selected
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setSelectedUsers([])}>
+                      Clear Selection
+                    </Button>
+                  </div>
+                )}
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="p-2 w-10">
+                          <Checkbox 
+                            checked={users.length > 0 && selectedUsers.length === users.length}
+                            onCheckedChange={toggleAllUsers}
+                          />
+                        </th>
+                        <th className="p-2 text-left">Name</th>
+                        <th className="p-2">Email</th>
+                        <th className="p-2">Phone</th>
+                        <th className="p-2">Gender</th>
+                        <th className="p-2">Joined</th>
+                        <th className="p-2">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.id} className={`border-b hover:bg-secondary/50 ${selectedUsers.includes(u.user_id) ? 'bg-primary/10' : ''}`}>
+                          <td className="p-2">
+                            <Checkbox 
+                              checked={selectedUsers.includes(u.user_id)}
+                              onCheckedChange={() => toggleUserSelection(u.user_id)}
+                            />
+                          </td>
+                          <td className="p-2 font-medium">{u.name}</td>
+                          <td className="p-2">{u.email}</td>
+                          <td className="p-2">{u.whatsapp_phone}</td>
+                          <td className="p-2 capitalize">{u.gender}</td>
+                          <td className="p-2">{new Date(u.created_at).toLocaleDateString()}</td>
+                          <td className="p-2 flex gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => { setSelectedProfile(u); setShowProfileModal(true); }}>
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteUser(u.user_id)}
+                              disabled={deletingUsers}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </TabsContent>
 
