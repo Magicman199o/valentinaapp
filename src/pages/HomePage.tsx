@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Logo from '@/components/Logo';
 import FloatingHearts from '@/components/FloatingHearts';
-import CircularCountdown from '@/components/CircularCountdown';
 import SponsorCarousel from '@/components/SponsorCarousel';
 import MatchRevealCard from '@/components/MatchRevealCard';
 import InstantMatchPrompt from '@/components/InstantMatchPrompt';
 import VIPCodeEntry from '@/components/VIPCodeEntry';
 import { toast } from 'sonner';
+import CountdownTimer from '@/components/CountdownTimer';
 
 interface MatchedProfile {
   user_id: string;
@@ -178,8 +178,22 @@ const HomePage = () => {
   };
 
   const getCountdownDate = () => {
-    // Valentine's Day 2025 at 6am
-    return new Date('2025-02-14T06:00:00');
+    // Quick test: if URL contains ?testDays=NUMBER use that many days from now
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const testDays = params.get('testDays');
+      if (testDays) {
+        const days = Number(testDays);
+        if (!isNaN(days)) {
+          return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+        }
+      }
+    } catch (e) {
+      // ignore (SSR or window not available)
+    }
+
+    // Valentine's Day 2026 at 6am
+    return new Date('2026-02-14T06:00:00');
   };
 
   // Filter matches based on VIP status
@@ -304,16 +318,13 @@ const HomePage = () => {
             </div>
           ) : (
             // Show countdown - match is pending
-            <div className="space-y-6">
-              <CircularCountdown 
+            <div className="space-y-6 py-8">
+              <CountdownTimer 
                 targetDate={getCountdownDate()} 
-                onComplete={fetchMatches} 
+                onComplete={fetchMatches}
+                gender={profile?.gender === 'male' ? 'male' : 'female'}
+                name={profile?.name}
               />
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Your match will be revealed on Valentine's Day! ❤️
-                </p>
-              </div>
             </div>
           )}
         </motion.div>
