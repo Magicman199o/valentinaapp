@@ -17,6 +17,7 @@ export default {
         sans: ['Inter', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
         oswald: ['Oswald', 'sans-serif'],
+        merriweather: ['Merriweather', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
