@@ -86,7 +86,7 @@ const PaymentPage = () => {
     setLoading(true);
     
     try {
-      const callbackUrl = `${window.location.origin}/payment`;
+      const callbackUrl = 'https://valentinaapp.lovable.app/payment';
       
       const { data, error } = await supabase.functions.invoke('paystack-init', {
         body: {
