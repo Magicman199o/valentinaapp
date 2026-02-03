@@ -207,22 +207,33 @@ const MatchRevealCard = ({ profile, isInstantMatch }: MatchRevealCardProps) => {
           <div className="text-center">
             <h3 className="text-xl font-serif font-bold">{profile.name}</h3>
             <p className="text-muted-foreground capitalize">
-              {profile.relationship_status || 'Ready for love'}
+              {profile.gender}
+            </p>
+          </div>
+
+          {/* Relationship Status */}
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+              <Heart className="w-4 h-4" />
+              Relationship Status
+            </h4>
+            <p className="text-sm bg-secondary/50 rounded-lg p-3 capitalize">
+              {profile.relationship_status || 'Not specified'}
             </p>
           </div>
 
           {/* About */}
-          {profile.about && (
-            <div className="space-y-2">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">About</h4>
-              <p className="text-sm bg-secondary/50 rounded-lg p-3">{profile.about}</p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">About</h4>
+            <p className="text-sm bg-secondary/50 rounded-lg p-3">
+              {profile.about || 'No about info provided'}
+            </p>
+          </div>
 
           {/* Interests */}
-          {profile.interests && profile.interests.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Interests</h4>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Interests</h4>
+            {profile.interests && profile.interests.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {profile.interests.map((interest) => (
                   <span
@@ -233,19 +244,21 @@ const MatchRevealCard = ({ profile, isInstantMatch }: MatchRevealCardProps) => {
                   </span>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm bg-secondary/50 rounded-lg p-3 text-muted-foreground">No interests listed</p>
+            )}
+          </div>
 
           {/* Wishlist */}
-          {profile.wishlist && (
-            <div className="space-y-2">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <Gift className="w-4 h-4" />
-                Wishlist
-              </h4>
-              <p className="text-sm bg-secondary/50 rounded-lg p-3">{profile.wishlist}</p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+              <Gift className="w-4 h-4" />
+              Wishlist
+            </h4>
+            <p className="text-sm bg-secondary/50 rounded-lg p-3">
+              {profile.wishlist || 'No wishlist provided'}
+            </p>
+          </div>
 
           {/* Contact Info */}
           <div className="space-y-2">

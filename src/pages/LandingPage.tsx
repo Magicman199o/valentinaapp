@@ -170,7 +170,11 @@ const LandingPage = () => {
               </h1>
               
               <p className="text-lg text-muted-foreground mb-8 max-w-lg mx-auto lg:mx-0">
+                Love starts with a Match! find someone who makes Valentine's Day feel special, intentional, and real.
+                <br /><br />
                 Join thousands finding their perfect match through our unique valentine matching experience.
+                <br /><br />
+                click <span className="font-semibold text-primary">"GET ME A VAL"</span> to continue.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
