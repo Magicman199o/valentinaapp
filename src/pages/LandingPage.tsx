@@ -296,7 +296,7 @@ const LandingPage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-foreground flex items-center justify-center gap-3 flex-wrap">
-              Why Choose <img src={valentinaLogo3D} alt="Valentina" className="h-12 md:h-14 w-auto inline-block" />?
+              Why Choose <img src={valentinaLogo3D} alt="Valentina" className="h-16 md:h-20 w-auto inline-block" />?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Whether you're looking to exchange thoughtful gifts or you're single and ready for something serious, Valentina makes it easy! We simplify the journey to real, meaningful love.
