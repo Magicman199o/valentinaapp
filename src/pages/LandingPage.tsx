@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 
 // Import hero background image
 import heroImage from '@/assets/landing-reference.png';
-import valentinaLogo3D from '@/assets/valentina-logo-3d.jpg';
+import valentinaLogo3D from '/logo-1.png';
 
 const LandingPage = () => {
   const [showSponsorForm, setShowSponsorForm] = useState(false);

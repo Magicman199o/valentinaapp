@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import valentinaLogo from '@/assets/valentina-logo.png';
+import valentinaLogo from '/logo-1.png';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -9,7 +9,7 @@ interface LogoProps {
 const Logo = ({ size = 'md' }: LogoProps) => {
   const sizeClasses = {
     sm: 'h-8',
-    md: 'h-10',
+    md: 'h-20',
     lg: 'h-16 md:h-20',
   };
 
