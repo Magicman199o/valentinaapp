@@ -218,7 +218,7 @@ const LandingPage = () => {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Over <span className="font-semibold text-foreground">1000+</span> successful valentine matches
+                  Over <span className="font-semibold text-foreground">18000+</span> successful valentine matches
                 </p>
               </motion.div>
             </motion.div>
@@ -298,7 +298,7 @@ const LandingPage = () => {
               Why Choose <span className="text-gradient-primary">Valentina</span>?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Whether it's for your single friends, your office team, or a community group, we make finding love easy!
+              Whether you're looking to exchange thoughtful gifts or you're single and ready for something serious, Valentina makes it easy! We simplify the journey to real, meaningful love.
             </p>
           </motion.div>
           
