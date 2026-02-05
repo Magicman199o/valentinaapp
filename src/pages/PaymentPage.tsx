@@ -21,6 +21,7 @@ const PaymentPage = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
   const [profile, setProfile] = useState<{
     name: string;
     email: string;
@@ -37,11 +38,17 @@ const PaymentPage = () => {
 
     fetchProfile();
 
-    // Handle Paystack callback
-    if (reference || trxref) {
-      verifyPayment(reference || trxref!);
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, reference, trxref]);
+
+  useEffect(() => {
+    if (!reference && !trxref) return;
+    if (verified) return;
+    verifyPayment(reference || trxref);
+
+    setVerified(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reference, trxref, verified]);
 
   const fetchProfile = async () => {
     if (!user) return;
