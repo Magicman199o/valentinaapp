@@ -187,10 +187,6 @@ const PaymentPage = () => {
         <div className="card-romantic">
           <div className="text-center mb-8">
             <Logo size="lg" />
-            <p className="text-muted-foreground mt-2">
-              Complete your registration by making payment to finalize the
-              process and set up your profile.
-            </p>
           </div>
 
           <div className="space-y-6">
@@ -207,13 +203,14 @@ const PaymentPage = () => {
                 Welcome, {profile?.name}!
               </h1>
               <p className="text-muted-foreground">
-                Complete your payment to start your journey to love
+                Start your journey to love. Complete your registration by making payment to finalize the
+              process and set up your profile.
               </p>
             </div>
 
             <div className="bg-secondary/50 rounded-xl p-4 space-y-3">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Registration Fee</span>
+                <span className="text-muted-foreground"> One time registration Fee</span>
                 <span className="font-semibold">₦2,000</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
