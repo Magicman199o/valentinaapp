@@ -197,6 +197,11 @@ const MobileAuthPage = ({
                     className="pl-10 py-6 rounded-[20px]"
                   />
                 </div>
+                {mode === "signup" && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Please make sure you enter a valid email address
+                  </p>
+                )}
               </div>
 
               {mode !== "forgot" && (
