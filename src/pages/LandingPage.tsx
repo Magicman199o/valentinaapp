@@ -353,7 +353,7 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="relative z-10 section-footer py-12">
         <div className="max-w-7xl mx-auto px-4 md:px-8 text-center">
-          <Logo size="sm" />
+          <Logo size="lg" />
           <p className="text-sm text-muted-foreground mt-4">
             Making valentine matchmaking better. Your favorite love matching app ❤️
           </p>
