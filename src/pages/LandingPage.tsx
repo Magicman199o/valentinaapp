@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 
 // Import hero background image
 import heroImage from '@/assets/landing-reference.png';
-import valentinaLogo3D from '@/assets/valentina-logo-new.png';
+import valentinaLogoHero from '@/assets/valentina-logo-hero.jpg';
 
 const LandingPage = () => {
   const [showSponsorForm, setShowSponsorForm] = useState(false);
@@ -156,10 +156,9 @@ const LandingPage = () => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 mb-6"
+                className="mb-8"
               >
-                <Sparkles className="w-5 h-5 text-primary" />
-                <img src={valentinaLogo3D} alt="Valentina 4.0" className="h-8 w-auto" />
+                <img src={valentinaLogoHero} alt="Valentina" className="h-32 md:h-40 lg:h-48 w-auto mx-auto lg:mx-0" />
               </motion.div>
               
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 leading-tight text-foreground">
@@ -296,7 +295,7 @@ const LandingPage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-foreground flex items-center justify-center gap-3 flex-wrap">
-              Why Choose <img src={valentinaLogo3D} alt="Valentina" className="h-24 md:h-32 w-auto inline-block align-middle" />?
+              Why Choose <img src={valentinaLogoHero} alt="Valentina" className="h-20 md:h-28 w-auto inline-block align-middle" />?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Whether you're looking to exchange thoughtful gifts or you're single and ready for something serious, Valentina makes it easy! We simplify the journey to real, meaningful love.
