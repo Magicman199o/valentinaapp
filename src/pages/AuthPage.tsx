@@ -238,6 +238,7 @@ const AuthPage = () => {
                     className="pl-10"
                   />
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">Please enter a valid email address</p>
               </div>
 
               {mode !== "forgot" && (
