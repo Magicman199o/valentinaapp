@@ -90,7 +90,7 @@ const LandingPage = () => {
           <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/auth">
+          <Link to="/auth?mode=login">
             <Button variant="ghost" className="text-foreground hover:bg-secondary font-medium">
               Login
             </Button>
