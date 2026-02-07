@@ -19,8 +19,11 @@ const ProtectedRoute = ({
   const [checkingPayment, setCheckingPayment] = useState(true);
 
   useEffect(() => {
-    if (loading || !user) {
+    if (loading) return;
+
+    if (!user) {
       setCheckingPayment(false);
+      return;
     }
 
     const checkPaymentStatus = async () => {
@@ -35,7 +38,7 @@ const ProtectedRoute = ({
     };
 
     checkPaymentStatus();
-  }, [user, user?.id, loading]);
+  }, [user, loading]);
 
   if (loading || checkingPayment) {
     return (
@@ -50,7 +53,7 @@ const ProtectedRoute = ({
   }
 
   // Redirect to payment if user hasn't paid (unless they're an admin)
-  if (!paymentStatus && !isAdmin) {
+  if (paymentStatus !== true && !isAdmin) {
     return <Navigate to="/payment" state={{ from: location }} replace />;
   }
 
