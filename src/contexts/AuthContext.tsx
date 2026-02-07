@@ -105,17 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string,
     metadata: { name: string; whatsapp_phone: string; gender: 'male' | 'female' }
   ) => {
-    // Check if email already exists
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', email)
-      .single();
-
-    if (existingProfile) {
-      return { error: new Error('This email is already registered. Please login instead.') };
-    }
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
