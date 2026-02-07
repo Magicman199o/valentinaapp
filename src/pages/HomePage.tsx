@@ -192,17 +192,22 @@ const HomePage = () => {
       // ignore (SSR or window not available)
     }
 
-    // Valentine's Day 2026 at 6am
-    return new Date('2026-02-14T06:00:00');
+    // Valentine's Day 2026 at 6am WAT (UTC+1) = 5am UTC
+    return new Date('2026-02-14T05:00:00Z');
   };
 
-  // Filter matches based on VIP status
+  // Check if countdown has passed
+  const countdownDate = getCountdownDate();
+  const isCountdownOver = new Date() >= countdownDate;
+
+  // Filter matches based on VIP status and countdown
   const visibleMatches = matches.filter(match => {
     if (match.is_instant_match) {
       // Only show instant matches if VIP code is used
       return vipMatchRevealed || (vipCode && vipCode.is_used);
     }
-    return true;
+    // Regular matches only visible after countdown OR if user has used VIP code
+    return isCountdownOver;
   });
 
   // Check if user has pending VIP code (assigned but not used)
@@ -259,68 +264,69 @@ const HomePage = () => {
           transition={{ delay: 0.2 }}
           className="card-romantic mb-6"
         >
-          {/* Show revealed match if VIP code was used */}
-          {hasUsedVIPCode && visibleMatches.length > 0 ? (
-            <MatchRevealCard 
-              profile={visibleMatches[0].matchedProfile!} 
-              isInstantMatch={visibleMatches[0].is_instant_match}
-            />
-          ) : visibleMatches.length > 0 && !hasPendingVIPCode ? (
-            // Show regular matches (non-instant)
-            <div className="space-y-4">
-              <div className="text-center">
-                <Heart className="w-12 h-12 mx-auto text-primary animate-heartbeat mb-2" />
-                <h2 className="text-xl font-serif font-bold">Your Matches</h2>
-              </div>
-              
-              <div className="space-y-3">
-                {visibleMatches.map((match) => (
-                  <div
-                    key={match.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary/70 transition-colors"
-                    onClick={() => setSelectedMatch(match)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-primary/10">
-                        {match.matchedProfile?.profile_picture_url ? (
-                          <img
-                            src={match.matchedProfile.profile_picture_url}
-                            alt={match.matchedProfile.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <User className="w-6 h-6 text-primary" />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium">{match.matchedProfile?.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {match.is_instant_match ? '⚡ Instant Match' : '💕 Your Match'}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedMatch(match);
-                      }}
+          {/* Show matches if countdown is over or VIP code used */}
+          {visibleMatches.length > 0 ? (
+            visibleMatches.length === 1 ? (
+              <MatchRevealCard 
+                profile={visibleMatches[0].matchedProfile!} 
+                isInstantMatch={visibleMatches[0].is_instant_match}
+              />
+            ) : (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <Heart className="w-12 h-12 mx-auto text-primary animate-heartbeat mb-2" />
+                  <h2 className="text-xl font-serif font-bold">Your Matches</h2>
+                </div>
+                
+                <div className="space-y-3">
+                  {visibleMatches.map((match) => (
+                    <div
+                      key={match.id}
+                      className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary/70 transition-colors"
+                      onClick={() => setSelectedMatch(match)}
                     >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-primary/10">
+                          {match.matchedProfile?.profile_picture_url ? (
+                            <img
+                              src={match.matchedProfile.profile_picture_url}
+                              alt={match.matchedProfile.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <User className="w-6 h-6 text-primary" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">{match.matchedProfile?.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {match.is_instant_match ? '⚡ Instant Match' : '💕 Your Match'}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedMatch(match);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )
           ) : (
             // Show countdown - match is pending
             <div className="space-y-6 py-8">
               <CountdownTimer 
-                targetDate={getCountdownDate()} 
+                targetDate={countdownDate} 
                 onComplete={fetchMatches}
                 gender={profile?.gender === 'male' ? 'male' : 'female'}
                 name={profile?.name}
@@ -330,7 +336,7 @@ const HomePage = () => {
         </motion.div>
 
         {/* Instant Match Button - Only show if no matches yet and no used VIP code */}
-        {!hasUsedVIPCode && visibleMatches.length === 0 && (
+        {!isCountdownOver && !hasUsedVIPCode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
