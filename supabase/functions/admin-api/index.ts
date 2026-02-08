@@ -17,14 +17,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { action, adminUsername, adminPassword, ...params } = await req.json();
+    const { action, adminUsername, adminPassword, ...params } =
+      await req.json();
 
     // Verify admin credentials
     if (adminUsername !== ADMIN_USERNAME || adminPassword !== ADMIN_PASSWORD) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -35,12 +36,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     switch (action) {
       case "fetchAll":
-        const [profilesRes, matchesRes, sponsorsRes, vipRes] = await Promise.all([
-          supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-          supabase.from("matches").select("*"),
-          supabase.from("sponsors").select("*"),
-          supabase.from("vip_codes").select("*"),
-        ]);
+        const [profilesRes, matchesRes, sponsorsRes, vipRes] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("*")
+              .order("created_at", { ascending: false }),
+            supabase.from("matches").select("*"),
+            supabase.from("sponsors").select("*"),
+            supabase.from("vip_codes").select("*"),
+          ]);
         result = {
           profiles: profilesRes.data || [],
           matches: matchesRes.data || [],
@@ -52,24 +57,24 @@ const handler = async (req: Request): Promise<Response> => {
       case "createVIPCodeWithMatch":
         // Create VIP code and match simultaneously
         const { code, assignedUserId, matchWithUserId } = params;
-        
+
         // Get both users' genders to determine male/female
         const { data: users } = await supabase
           .from("profiles")
           .select("user_id, gender")
           .in("user_id", [assignedUserId, matchWithUserId]);
-        
+
         if (!users || users.length !== 2) {
           throw new Error("Could not find both users");
         }
-        
-        const assignedUser = users.find(u => u.user_id === assignedUserId);
-        const matchUser = users.find(u => u.user_id === matchWithUserId);
-        
+
+        const assignedUser = users.find((u) => u.user_id === assignedUserId);
+        const matchUser = users.find((u) => u.user_id === matchWithUserId);
+
         if (!assignedUser || !matchUser) {
           throw new Error("Could not find user profiles");
         }
-        
+
         // Determine male and female for the match
         let maleUserId: string, femaleUserId: string;
         if (assignedUser.gender === "male") {
@@ -79,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
           maleUserId = matchWithUserId;
           femaleUserId = assignedUserId;
         }
-        
+
         // Create the match first
         const { data: matchData, error: matchError } = await supabase
           .from("matches")
@@ -90,27 +95,27 @@ const handler = async (req: Request): Promise<Response> => {
           })
           .select()
           .single();
-        
+
         if (matchError) throw matchError;
-        
+
         // Create VIP code linked to the match
         const { data: vipData, error: vipError } = await supabase
           .from("vip_codes")
-          .insert({ 
-            code, 
-            assigned_user_id: assignedUserId, 
+          .insert({
+            code,
+            assigned_user_id: assignedUserId,
             is_used: false,
-            match_id: matchData.id
+            match_id: matchData.id,
           })
           .select()
           .single();
-        
+
         if (vipError) {
           // Rollback the match if VIP code creation fails
           await supabase.from("matches").delete().eq("id", matchData.id);
           throw vipError;
         }
-        
+
         result = { vipCode: vipData, match: matchData };
         break;
 
@@ -119,7 +124,11 @@ const handler = async (req: Request): Promise<Response> => {
         const { code: legacyCode, assignedUserId: legacyUserId } = params;
         const { data: legacyVipData, error: legacyVipError } = await supabase
           .from("vip_codes")
-          .insert({ code: legacyCode, assigned_user_id: legacyUserId, is_used: false })
+          .insert({
+            code: legacyCode,
+            assigned_user_id: legacyUserId,
+            is_used: false,
+          })
           .select()
           .single();
         if (legacyVipError) throw legacyVipError;
@@ -128,21 +137,21 @@ const handler = async (req: Request): Promise<Response> => {
 
       case "deleteVIPCode":
         const { vipId } = params;
-        
+
         // First get the VIP code to check if it has a match
         const { data: vipToDelete } = await supabase
           .from("vip_codes")
           .select("match_id")
           .eq("id", vipId)
           .single();
-        
+
         // Delete the VIP code
         const { error: delVipError } = await supabase
           .from("vip_codes")
           .delete()
           .eq("id", vipId);
         if (delVipError) throw delVipError;
-        
+
         // If there was an associated match, delete it too (if code wasn't used yet)
         if (vipToDelete?.match_id) {
           await supabase
@@ -150,21 +159,23 @@ const handler = async (req: Request): Promise<Response> => {
             .delete()
             .eq("id", vipToDelete.match_id);
         }
-        
+
         result = { success: true };
         break;
 
       case "createMatch":
-        const { maleUserId: manualMaleId, femaleUserId: manualFemaleId } = params;
-        const { data: manualMatchData, error: manualMatchError } = await supabase
-          .from("matches")
-          .insert({
-            male_user_id: manualMaleId,
-            female_user_id: manualFemaleId,
-            is_instant_match: true,
-          })
-          .select()
-          .single();
+        const { maleUserId: manualMaleId, femaleUserId: manualFemaleId } =
+          params;
+        const { data: manualMatchData, error: manualMatchError } =
+          await supabase
+            .from("matches")
+            .insert({
+              male_user_id: manualMaleId,
+              female_user_id: manualFemaleId,
+              is_instant_match: true,
+            })
+            .select()
+            .single();
         if (manualMatchError) throw manualMatchError;
         result = manualMatchData;
         break;
@@ -194,17 +205,71 @@ const handler = async (req: Request): Promise<Response> => {
         if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
           throw new Error("No user IDs provided");
         }
-        
+
         // Delete users from auth (this will cascade to profiles via trigger)
         for (const userId of userIds) {
-          const { error: delUserError } = await supabase.auth.admin.deleteUser(userId);
+          const { error: delUserError } =
+            await supabase.auth.admin.deleteUser(userId);
           if (delUserError) {
             console.error(`Failed to delete user ${userId}:`, delUserError);
             throw new Error(`Failed to delete user: ${delUserError.message}`);
           }
         }
-        
+
         result = { success: true, deletedCount: userIds.length };
+        break;
+
+      case "updateUser":
+        const { userId, updates } = params;
+
+        if (!userId) {
+          throw new Error("User ID is required");
+        }
+
+        if (!updates || typeof updates !== "object") {
+          throw new Error("Updates object is required");
+        }
+
+        // Build safe update payload - only allow known fields
+        const allowedFields: Record<string, any> = {};
+        if (typeof updates.name === "string" && updates.name.trim()) {
+          allowedFields.name = updates.name.trim();
+        }
+        if (typeof updates.email === "string" && updates.email.trim()) {
+          allowedFields.email = updates.email.trim();
+        }
+        if (
+          typeof updates.whatsapp_phone === "string" &&
+          updates.whatsapp_phone.trim()
+        ) {
+          allowedFields.whatsapp_phone = updates.whatsapp_phone.trim();
+        }
+        if (updates.gender === "male" || updates.gender === "female") {
+          allowedFields.gender = updates.gender;
+        }
+        if (typeof updates.payment_status === "boolean") {
+          allowedFields.payment_status = updates.payment_status;
+        }
+
+        if (Object.keys(allowedFields).length === 0) {
+          throw new Error("No valid fields to update");
+        }
+
+        // Update the user's profile
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from("profiles")
+          .update(allowedFields)
+          .eq("user_id", userId)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+
+        if (!updatedProfile) {
+          throw new Error("User not found");
+        }
+
+        result = updatedProfile;
         break;
 
       default:
@@ -217,10 +282,10 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Admin API error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 };
 
