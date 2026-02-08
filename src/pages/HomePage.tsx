@@ -202,12 +202,11 @@ const HomePage = () => {
 
   // Filter matches based on VIP status and countdown
   const visibleMatches = matches.filter(match => {
+    if (isCountdownOver) return true; // All matches visible after countdown
     if (match.is_instant_match) {
-      // Only show instant matches if VIP code is used
       return vipMatchRevealed || (vipCode && vipCode.is_used);
     }
-    // Regular matches only visible after countdown OR if user has used VIP code
-    return isCountdownOver;
+    return false; // Regular matches hidden before countdown
   });
 
   // Check if user has pending VIP code (assigned but not used)
