@@ -272,7 +272,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       case "autoMatch": {
-        // Auto-match algorithm: only paid users, opposite gender, even distribution
+        // Incremental auto-match: preserve all existing matches, only match unmatched paid users
         const { data: paidUsers, error: paidError } = await supabase
           .from("profiles")
           .select("user_id, gender")
@@ -283,69 +283,106 @@ const handler = async (req: Request): Promise<Response> => {
           throw new Error("No paid users to match");
         }
 
-        const males = paidUsers.filter((u: any) => u.gender === "male").map((u: any) => u.user_id);
-        const females = paidUsers.filter((u: any) => u.gender === "female").map((u: any) => u.user_id);
+        // Get all existing matches to find already-matched users
+        const { data: existingMatches, error: matchesError } = await supabase
+          .from("matches")
+          .select("male_user_id, female_user_id");
 
-        if (males.length === 0 || females.length === 0) {
+        if (matchesError) throw matchesError;
+
+        // Build sets of already-matched user IDs
+        const matchedMales = new Set<string>();
+        const matchedFemales = new Set<string>();
+        // Also track how many matches each opposite-gender user has (for distribution)
+        const femaleMatchCount: Record<string, number> = {};
+        const maleMatchCount: Record<string, number> = {};
+
+        for (const m of (existingMatches || [])) {
+          matchedMales.add(m.male_user_id);
+          matchedFemales.add(m.female_user_id);
+          femaleMatchCount[m.female_user_id] = (femaleMatchCount[m.female_user_id] || 0) + 1;
+          maleMatchCount[m.male_user_id] = (maleMatchCount[m.male_user_id] || 0) + 1;
+        }
+
+        const allMales = paidUsers.filter((u: any) => u.gender === "male").map((u: any) => u.user_id);
+        const allFemales = paidUsers.filter((u: any) => u.gender === "female").map((u: any) => u.user_id);
+
+        // Find unmatched paid users
+        const unmatchedMales = allMales.filter((id: string) => !matchedMales.has(id));
+        const unmatchedFemales = allFemales.filter((id: string) => !matchedFemales.has(id));
+
+        if (unmatchedMales.length === 0 && unmatchedFemales.length === 0) {
+          result = { success: true, totalMatches: 0, message: "All paid users are already matched" };
+          break;
+        }
+
+        if (allMales.length === 0 || allFemales.length === 0) {
           throw new Error("Need at least one male and one female paid user to match");
         }
 
-        // Delete all existing non-instant matches first
-        // Keep instant (VIP) matches intact
-        await supabase
-          .from("matches")
-          .delete()
-          .eq("is_instant_match", false);
-
-        // Determine majority and minority groups
-        let majorityGroup: string[];
-        let minorityGroup: string[];
-        let majorityIsMale: boolean;
-
-        if (males.length >= females.length) {
-          majorityGroup = [...males];
-          minorityGroup = [...females];
-          majorityIsMale = true;
-        } else {
-          majorityGroup = [...females];
-          minorityGroup = [...males];
-          majorityIsMale = false;
-        }
-
-        // Shuffle both groups for randomness
-        for (let i = majorityGroup.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [majorityGroup[i], majorityGroup[j]] = [majorityGroup[j], majorityGroup[i]];
-        }
-        for (let i = minorityGroup.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [minorityGroup[i], minorityGroup[j]] = [minorityGroup[j], minorityGroup[i]];
-        }
-
-        // Distribute majority across minority evenly
-        // e.g., 31 males, 17 females: 31/17 = 1 remainder 14
-        // 14 females get 2 males, 3 females get 1 male
         const matchInserts: { male_user_id: string; female_user_id: string; is_instant_match: boolean }[] = [];
 
-        const baseCount = Math.floor(majorityGroup.length / minorityGroup.length);
-        const remainder = majorityGroup.length % minorityGroup.length;
+        // Shuffle unmatched groups
+        const shuffle = (arr: string[]) => {
+          for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+          }
+        };
+        shuffle(unmatchedMales);
+        shuffle(unmatchedFemales);
 
-        let majorityIdx = 0;
-        for (let i = 0; i < minorityGroup.length; i++) {
-          const count = i < remainder ? baseCount + 1 : baseCount;
-          for (let j = 0; j < count; j++) {
-            const majorityUserId = majorityGroup[majorityIdx];
-            const minorityUserId = minorityGroup[i];
+        // Match unmatched males with unmatched females first (1:1)
+        const pairCount = Math.min(unmatchedMales.length, unmatchedFemales.length);
+        for (let i = 0; i < pairCount; i++) {
+          matchInserts.push({
+            male_user_id: unmatchedMales[i],
+            female_user_id: unmatchedFemales[i],
+            is_instant_match: false,
+          });
+        }
+
+        // Remaining unmatched users of one gender need to be matched to already-matched opposite gender
+        const remainingUnmatchedMales = unmatchedMales.slice(pairCount);
+        const remainingUnmatchedFemales = unmatchedFemales.slice(pairCount);
+
+        // For remaining unmatched males: assign to females with fewest matches
+        if (remainingUnmatchedMales.length > 0 && allFemales.length > 0) {
+          // Update counts with new matches from above
+          for (let i = 0; i < pairCount; i++) {
+            femaleMatchCount[unmatchedFemales[i]] = (femaleMatchCount[unmatchedFemales[i]] || 0) + 1;
+          }
+          for (const maleId of remainingUnmatchedMales) {
+            // Find female with fewest matches
+            const sorted = [...allFemales].sort((a, b) => (femaleMatchCount[a] || 0) - (femaleMatchCount[b] || 0));
+            const targetFemale = sorted[0];
             matchInserts.push({
-              male_user_id: majorityIsMale ? majorityUserId : minorityUserId,
-              female_user_id: majorityIsMale ? minorityUserId : majorityUserId,
+              male_user_id: maleId,
+              female_user_id: targetFemale,
               is_instant_match: false,
             });
-            majorityIdx++;
+            femaleMatchCount[targetFemale] = (femaleMatchCount[targetFemale] || 0) + 1;
           }
         }
 
-        // Insert all matches
+        // For remaining unmatched females: assign to males with fewest matches
+        if (remainingUnmatchedFemales.length > 0 && allMales.length > 0) {
+          for (let i = 0; i < pairCount; i++) {
+            maleMatchCount[unmatchedMales[i]] = (maleMatchCount[unmatchedMales[i]] || 0) + 1;
+          }
+          for (const femaleId of remainingUnmatchedFemales) {
+            const sorted = [...allMales].sort((a, b) => (maleMatchCount[a] || 0) - (maleMatchCount[b] || 0));
+            const targetMale = sorted[0];
+            matchInserts.push({
+              male_user_id: targetMale,
+              female_user_id: femaleId,
+              is_instant_match: false,
+            });
+            maleMatchCount[targetMale] = (maleMatchCount[targetMale] || 0) + 1;
+          }
+        }
+
+        // Insert new matches
         if (matchInserts.length > 0) {
           const { error: insertError } = await supabase
             .from("matches")
@@ -356,8 +393,10 @@ const handler = async (req: Request): Promise<Response> => {
         result = {
           success: true,
           totalMatches: matchInserts.length,
-          maleCount: males.length,
-          femaleCount: females.length,
+          maleCount: allMales.length,
+          femaleCount: allFemales.length,
+          unmatchedMalesBefore: unmatchedMales.length,
+          unmatchedFemalesBefore: unmatchedFemales.length,
         };
         break;
       }
