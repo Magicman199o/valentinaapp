@@ -271,6 +271,26 @@ const handler = async (req: Request): Promise<Response> => {
         break;
       }
 
+      case "resetPassword": {
+        const { email, newPassword } = params;
+        if (!email || !newPassword) throw new Error("Email and newPassword are required");
+
+        // Find user by email
+        const { data: userList, error: listError } = await supabase.auth.admin.listUsers();
+        if (listError) throw listError;
+
+        const targetUser = userList.users.find((u: any) => u.email === email);
+        if (!targetUser) throw new Error("User not found with that email");
+
+        const { error: updateError } = await supabase.auth.admin.updateUserById(targetUser.id, {
+          password: newPassword,
+        });
+        if (updateError) throw updateError;
+
+        result = { success: true, message: `Password reset for ${email}` };
+        break;
+      }
+
       case "autoMatch": {
         // Incremental auto-match: preserve all existing matches, only match unmatched paid users
         const { data: paidUsers, error: paidError } = await supabase
