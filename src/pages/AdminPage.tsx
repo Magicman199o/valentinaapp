@@ -18,6 +18,7 @@ import {
   DollarSign,
   CreditCard,
   KeyRound,
+  Search,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -104,6 +105,10 @@ const AdminPage = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [resetNewPassword, setResetNewPassword] = useState("");
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [resetSearch, setResetSearch] = useState("");
+
+  // User search state
+  const [userSearch, setUserSearch] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -393,13 +398,22 @@ const AdminPage = () => {
               <div className="card-romantic space-y-4">
                 {/* Reset Password */}
                 <div className="p-4 bg-secondary/50 rounded-lg space-y-3">
-                  <h3 className="font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5" />Reset User Password</h3>
+                   <h3 className="font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5" />Reset User Password</h3>
                   <div className="grid gap-4 md:grid-cols-3">
                     <div>
-                      <Label>User Email</Label>
+                      <Label>User Email (Paid Users)</Label>
                       <Select value={resetEmail} onValueChange={setResetEmail}>
-                        <SelectTrigger><SelectValue placeholder="Select user" /></SelectTrigger>
-                        <SelectContent>{users.map((u) => (<SelectItem key={u.user_id} value={u.email}>{u.name} ({u.email})</SelectItem>))}</SelectContent>
+                        <SelectTrigger><SelectValue placeholder="Select paid user" /></SelectTrigger>
+                        <SelectContent>
+                          <div className="px-2 pb-2">
+                            <Input placeholder="Search users..." value={resetSearch} onChange={(e) => setResetSearch(e.target.value)} className="h-8" />
+                          </div>
+                          {users.filter((u) => u.payment_status).filter((u) => {
+                            if (!resetSearch) return true;
+                            const q = resetSearch.toLowerCase();
+                            return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+                          }).map((u) => (<SelectItem key={u.user_id} value={u.email}>{u.name} ({u.email})</SelectItem>))}
+                        </SelectContent>
                       </Select>
                     </div>
                     <div>
@@ -424,6 +438,12 @@ const AdminPage = () => {
                   </div>
                 )}
 
+                {/* User Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input placeholder="Search users by name, email, or phone..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9" />
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -439,7 +459,11 @@ const AdminPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((u) => (
+                      {users.filter((u) => {
+                        if (!userSearch) return true;
+                        const q = userSearch.toLowerCase();
+                        return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.whatsapp_phone?.toLowerCase().includes(q);
+                      }).map((u) => (
                         <tr key={u.id} className={`border-b hover:bg-secondary/50 ${selectedUsers.includes(u.user_id) ? "bg-primary/10" : ""}`}>
                           <td className="p-2"><Checkbox checked={selectedUsers.includes(u.user_id)} onCheckedChange={() => toggleUserSelection(u.user_id)} /></td>
                           <td className="p-2 font-medium">{u.name}</td>
