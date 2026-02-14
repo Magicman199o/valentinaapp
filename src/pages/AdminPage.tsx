@@ -17,6 +17,7 @@ import {
   Shuffle,
   DollarSign,
   CreditCard,
+  KeyRound,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,11 @@ const AdminPage = () => {
   // User deletion state
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [deletingUsers, setDeletingUsers] = useState(false);
+
+  // Reset password state
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -300,6 +306,18 @@ const AdminPage = () => {
     setSelectedUsers(selectedUsers.length === users.length ? [] : users.map((u) => u.user_id));
   };
 
+  // --- Reset Password ---
+  const resetPassword = async () => {
+    if (!resetEmail || !resetNewPassword) { toast.error("Please enter email and new password"); return; }
+    setResettingPassword(true);
+    try {
+      await callAdminAPI("resetPassword", { email: resetEmail, newPassword: resetNewPassword });
+      toast.success(`Password reset for ${resetEmail}`);
+      setResetEmail(""); setResetNewPassword("");
+    } catch (error: any) { toast.error(error.message || "Failed to reset password"); }
+    setResettingPassword(false);
+  };
+
   // --- Computed ---
   const maleUsers = users.filter((u) => u.gender === "male");
   const femaleUsers = users.filter((u) => u.gender === "female");
@@ -373,6 +391,29 @@ const AdminPage = () => {
             {/* USERS TAB */}
             <TabsContent value="users">
               <div className="card-romantic space-y-4">
+                {/* Reset Password */}
+                <div className="p-4 bg-secondary/50 rounded-lg space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5" />Reset User Password</h3>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                      <Label>User Email</Label>
+                      <Select value={resetEmail} onValueChange={setResetEmail}>
+                        <SelectTrigger><SelectValue placeholder="Select user" /></SelectTrigger>
+                        <SelectContent>{users.map((u) => (<SelectItem key={u.user_id} value={u.email}>{u.name} ({u.email})</SelectItem>))}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>New Password</Label>
+                      <Input type="text" placeholder="Enter new password" value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} />
+                    </div>
+                    <div className="flex items-end">
+                      <Button onClick={resetPassword} disabled={resettingPassword || !resetEmail || !resetNewPassword} className="btn-romantic">
+                        {resettingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}Reset Password
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
                 {selectedUsers.length > 0 && (
                   <div className="flex items-center gap-4 p-3 bg-destructive/10 rounded-lg">
                     <span className="text-sm font-medium">{selectedUsers.length} user(s) selected</span>
