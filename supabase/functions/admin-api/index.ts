@@ -275,17 +275,24 @@ const handler = async (req: Request): Promise<Response> => {
         const { email, newPassword } = params;
         if (!email || !newPassword) throw new Error("Email and newPassword are required");
 
-        // Find user by email
-        const { data: userList, error: listError } = await supabase.auth.admin.listUsers();
-        if (listError) throw listError;
-
-        const targetUser = userList.users.find((u: any) => u.email === email);
+        // Find user by email with pagination
+        let targetUser = null;
+        let page = 1;
+        const perPage = 1000;
+        while (!targetUser) {
+          const { data: userList, error: listError } = await supabase.auth.admin.listUsers({ page, perPage });
+          if (listError) throw listError;
+          if (!userList.users || userList.users.length === 0) break;
+          targetUser = userList.users.find((u: any) => u.email === email);
+          if (userList.users.length < perPage) break;
+          page++;
+        }
         if (!targetUser) throw new Error("User not found with that email");
 
-        const { error: updateError } = await supabase.auth.admin.updateUserById(targetUser.id, {
+        const { error: updatePwError } = await supabase.auth.admin.updateUserById(targetUser.id, {
           password: newPassword,
         });
-        if (updateError) throw updateError;
+        if (updatePwError) throw updatePwError;
 
         result = { success: true, message: `Password reset for ${email}` };
         break;
