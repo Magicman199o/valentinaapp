@@ -447,14 +447,14 @@ const AdminPage = () => {
                       <Label>Male User</Label>
                       <Select value={manualMatchMale} onValueChange={setManualMatchMale}>
                         <SelectTrigger><SelectValue placeholder="Select male user" /></SelectTrigger>
-                        <SelectContent>{maleUsers.map((u) => (<SelectItem key={u.user_id} value={u.user_id}>{u.name} ({u.email})</SelectItem>))}</SelectContent>
+                        <SelectContent>{maleUsers.filter(u => u.payment_status).map((u) => (<SelectItem key={u.user_id} value={u.user_id}>{u.name} ({u.email})</SelectItem>))}</SelectContent>
                       </Select>
                     </div>
                     <div>
                       <Label>Female User</Label>
                       <Select value={manualMatchFemale} onValueChange={setManualMatchFemale}>
                         <SelectTrigger><SelectValue placeholder="Select female user" /></SelectTrigger>
-                        <SelectContent>{femaleUsers.map((u) => (<SelectItem key={u.user_id} value={u.user_id}>{u.name} ({u.email})</SelectItem>))}</SelectContent>
+                        <SelectContent>{femaleUsers.filter(u => u.payment_status).map((u) => (<SelectItem key={u.user_id} value={u.user_id}>{u.name} ({u.email})</SelectItem>))}</SelectContent>
                       </Select>
                     </div>
                     <div className="flex items-end">
